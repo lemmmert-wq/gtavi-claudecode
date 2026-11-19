@@ -277,7 +277,16 @@ function renderTrends(data){
    const freshness=x.freshness==="exact"?(x.age_hours+" uur oud · "+Math.round(x.views_per_hour||0).toLocaleString("nl-BE")+" views/uur")
      :x.freshness==="day"?"Datum bekend; uur onbekend":"Publicatiedatum onbekend";
    meta.textContent=[x.channel||"YouTube",viewText,freshness].join(" · ");
-   card.append(link,meta);target.append(card);
+   card.append(link,meta);
+   const choose=document.createElement("button");
+   choose.className="smallbtn";choose.style.marginTop="9px";
+   choose.textContent="Gebruik link voor analyse";
+   choose.addEventListener("click",()=>{
+     $("videourl").value=x.url;
+     $("permission").checked=false;
+     $("videourl").scrollIntoView({behavior:"smooth",block:"center"});
+   });
+   card.append(choose);target.append(card);
   }
  }
  if(!confirmed.length)note("Geen video's met een bevestigd tijdstip binnen de laatste 24 uur.");
