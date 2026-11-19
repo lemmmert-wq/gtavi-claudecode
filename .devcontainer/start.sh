@@ -38,6 +38,25 @@ if command -v curl >/dev/null 2>&1 &&
   running=1
 fi
 
+# A user may have synchronized GitHub before attaching. In that case
+# 'changed' is zero, but the running Python process still serves old code.
+if [ "$running" -eq 1 ]; then
+  code_now="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+  code_live="$(python3 - <<'PY'
+import json
+import urllib.request
+try:
+    with urllib.request.urlopen("http://127.0.0.1:8765/api/version", timeout=3) as res:
+        print(json.load(res).get("revision") or "unknown")
+except Exception:
+    print("unknown")
+PY
+)"
+  if [ "$code_now" != "$code_live" ]; then
+    changed=1
+  fi
+fi
+
 if [ "$changed" -eq 1 ] && [ "$running" -eq 1 ]; then
   # Never restart while a clip/live task is running.
   busy="$(python3 - <<'PY'
