@@ -2,13 +2,25 @@
 
 De mobiele webapp gebruikt zoveel mogelijk van de oorspronkelijke GTA VI Claude Code-scripts. Je HomeBoard staat in een andere repository en wordt niet aangeraakt.
 
+## Eerst technisch testen (zonder streamerbeelden)
+
+Na het ophalen van de nieuwste code in je bestaande Codespace:
+
+1. Open de privé-dashboardlink via poort **8765**.
+2. Klik op **🎬 Maak mijn proefclip**.
+3. De app genereert een eigen korte video, maakt via het originele scripts/cut.py een verticale MP4 en controleert die met scripts/check.py.
+4. **▶️ Bekijk je technische proefclip** verschijnt als het bestand klaar is; gebruik **⬇️ Bewaar proefclip** om de MP4 op je iPhone te bewaren.
+5. Deze proefclip heeft kunstmatige testbeelden, voorbereide ondertitels en geen GTA-gameplay. **Niet publiceren.** Whisper-herkenning of YouTube-downloads worden hiermee niet getest.
+
+GitHub Actions test dit via dezelfde POST /api/run API als de iPhone-knop, plus de video-preview en download. Een geslaagde GitHub-test bewijst nog niet dat de verwerking ook al in de draaiende Codespace geslaagd is.
+
 ## Dagelijkse werkwijze
 
 1. **Betaalopdracht zoeken:** open de links naar Content Rewards, Whop en Clip.tech in het dashboard. Controleer of de opdracht nog open is en of jij vanuit jouw regio mag meedoen.
 2. **Campagne opslaan:** neem de echte maker, toegestane bronvideo, verplichte credit, hashtags, formaat, duur en regels over. Laat onbekende tarieven en budgetten leeg: die worden nooit geschat.
 3. **Videobron kiezen:** gebruik je eigen video of beeld waarvoor de rechthebbende expliciet toestemming geeft. De aanwezigheid van een video op YouTube geeft niet automatisch hergebruikrechten.
-4. **Momenten vinden:** analyseer de video via de bestaande Whisper-/FFmpeg-/yt-dlp-scripts. Kies een voorgesteld hoogtepunt.
-5. **Clip maken:** kies blur, fill, facecam of react, plus woord-voor-woord ondertitels, tekstbubbels of geen ondertitels. Schrijf of kies een pakkende openingszin. Bekijk het resultaat op je gsm.
+4. **Momenten vinden:** tik bij een ontdekt YouTube-resultaat op **Gebruik link voor analyse**, of vul een eigen bronlink in. Bevestig de beeldrechten. Analyseer daarna via de bestaande Whisper-/FFmpeg-/yt-dlp-scripts en kies een hoogtepunt.
+5. **Clip maken:** kies blur, fill, facecam of react, plus woord-voor-woord ondertitels, tekstbubbels of geen ondertitels. Schrijf of kies een pakkende openingszin. Bekijk het resultaat op je gsm en gebruik **Bewaar clip** om de MP4 te downloaden.
 6. **Optioneel vertalen:** er zijn knoppen voor ES, PT, DE en RU op basis van het oorspronkelijke vertaal-script. Controleer elke vertaling.
 7. **Technische controle:** de oorspronkelijke check.py controleert 1080×1920, fps, audio, lengte, verboden woorden en eventueel de **handmatig overgenomen** hashtags/vermelding. Deze controle **kan niet** beeldrechten, campagne-eligibiliteit, alle overlays of betalingsgoedkeuring bevestigen.
 8. **Publicatie:** jij beslist of je de clip publiceert en dient zelf de URL in bij het campagneplatform. De app publiceert of schrijft niet zelfstandig in.
