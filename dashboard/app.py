@@ -16,9 +16,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from workflow import add_campaign, add_post, list_campaigns, list_posts, get_campaign, campaign_rules_file
-
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from dashboard.workflow import add_campaign, add_post, list_campaigns, list_posts, get_campaign, campaign_rules_file
+
 DATA = ROOT / ".dashboard"
 DATA.mkdir(exist_ok=True)
 PY = ROOT / ".venv" / "bin" / "python"
