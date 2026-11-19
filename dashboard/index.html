@@ -294,6 +294,95 @@ async function loadJobs(){
   updatePicks();
  }catch(e){$("activity").textContent=e.message}
 }
+let campaigns=[], posts=[];
+const val=id=>$(id).value.trim();
+function linkTo(url, label){
+ const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=label;return a;
+}
+function addText(container,tag,value,cls){
+ const e=document.createElement(tag);e.textContent=value;if(cls)e.className=cls;container.append(e);return e;
+}
+async function loadCampaigns(){
+ const d=await api("/api/campaigns");
+ campaigns=d.campaigns||[];
+ const target=$("campaignlist");target.replaceChildren();
+ if(!campaigns.length)addText(target,"p","Nog geen campagnes. Open eerst de campagnezoeklinks en lees de voorwaarden.");
+ for(const item of campaigns){
+  const box=document.createElement("div");box.className="listbox";
+  addText(box,"strong",item.name);
+  addText(box,"p",item.creator||"Maker niet ingevuld");
+  box.append(linkTo(item.source_url,"Bekijk originele campagne ↗"));
+  const payment=item.rate_per_1k===null?"Tarief onbekend":item.currency+" "+item.rate_per_1k+" / 1.000 views";
+  addText(box,"p",payment+" · "+(item.budget_left?"Budget: "+item.budget_left:"Budget onbekend"));
+  addText(box,"span",item.rules_reviewed?"Regels handmatig overgenomen":"Regels nog niet gecontroleerd","tag");
+  addText(box,"p",item.source_material?"Toegestaan bronmateriaal: "+item.source_material:"Bronmateriaal moet nog gecontroleerd worden.");
+  target.append(box);
+ }
+ for(const id of ["campaignpick","postcampaign"]){
+  const select=$(id);const old=select.value;select.replaceChildren();
+  select.add(new Option(id==="postcampaign"?"Geen campagne":"Zonder campagne (alleen technische check)",""));
+  for(const item of campaigns)select.add(new Option(item.name,item.id));
+  if(campaigns.some(x=>x.id===old))select.value=old;
+ }
+}
+async function loadPosts(){
+ const d=await api("/api/posts");posts=d.posts||[];
+ const target=$("postlist");target.replaceChildren();
+ const totals={};
+ for(const p of posts){
+  if((p.state==="approved"||p.state==="paid")&&p.confirmed_payout!==null){
+   totals[p.currency]=(totals[p.currency]||0)+Number(p.confirmed_payout);
+  }
+ }
+ const sums=Object.entries(totals).map(([cur,n])=>cur+" "+n.toFixed(2));
+ $("earningssummary").textContent=sums.length?"Geregistreerde goedgekeurde/betaalde bedragen: "+sums.join(" · "):"Nog geen bevestigde opbrengsten geregistreerd.";
+ for(const post of posts.slice(0,10)){
+  const b=document.createElement("div");b.className="listbox";
+  const campaign=campaigns.find(c=>c.id===post.campaign_id);
+  addText(b,"strong",post.platform+" · "+post.state+(campaign?" · "+campaign.name:""));
+  b.append(linkTo(post.url,"Bekijk gepubliceerde clip ↗"));
+  const views=post.views===null?"views onbekend":Number(post.views).toLocaleString("nl-BE")+" views";
+  const amount=post.confirmed_payout===null?"geen bevestigd bedrag":post.currency+" "+Number(post.confirmed_payout).toFixed(2)+" bevestigd";
+  addText(b,"p",views+" · "+amount);
+  target.append(b);
+ }
+}
+async function saveRecord(type, payload){
+ try{
+  await api("/api/"+type,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  if(type==="campaigns"){await loadCampaigns();alert("Campagne opgeslagen. Verifieer regels en actuele beschikbaarheid vóór gebruik.");}
+  else{await loadPosts();alert("Echte resultaten opgeslagen.");}
+ }catch(e){alert("Niet opgeslagen: "+e.message);}
+}
+$("savecampaign").addEventListener("click",()=>saveRecord("campaigns",{
+ name:val("cname"),source_url:val("curl"),creator:val("ccreator"),platforms:val("cplatforms"),
+ source_material:val("csource"),rate_per_1k:val("crate"),currency:val("ccurrency"),
+ cap_per_clip:val("ccap"),budget_left:val("cbudget"),min_seconds:val("cmin"),
+ max_seconds:val("cmax"),required_hashtags:val("ctags"),required_mention:val("cmention"),
+ rules:val("crules"),rules_reviewed:$("creviewed").checked
+}));
+$("savepost").addEventListener("click",()=>saveRecord("posts",{
+ url:val("posturl"),platform:val("postplatform"),state:val("poststate"),
+ campaign_id:val("postcampaign"),views:val("postviews"),
+ confirmed_payout:val("postpayout"),currency:val("postcurrency"),notes:val("postnotes")
+}));
+$("suggesthooks").addEventListener("click",()=>{
+ const job=jobs.find(x=>x.id===$("job").value);
+ const item=job?.candidates.find(x=>x.n===Number($("pick").value));
+ if(!item)return alert("Selecteer eerst een geanalyseerd fragment.");
+ const snippet=(item.text||"").trim().slice(0,75).replace(/[\r\n]/g," ");
+ const hooks=[
+  "Dit moment in GTA 6 had niemand verwacht",
+  "Kijk wat er hier in GTA 6 gebeurt",
+  snippet?"Let op deze reactie: "+snippet:"Deze GTA 6-reactie wil je niet missen"
+ ];
+ const panel=$("hooks");panel.replaceChildren();
+ for(const hook of hooks){
+  const button=document.createElement("button");button.className="smallbtn";
+  button.textContent=hook;button.addEventListener("click",()=>{$("hook").value=hook;});
+  panel.append(button);
+ }
+});
 function updatePicks(){
  const item=jobs.find(j=>j.id===$("job").value);
  const old=$("pick").value;
@@ -304,32 +393,51 @@ function updatePicks(){
  if(item&&item.candidates.some(c=>String(c.n)===old))$("pick").value=old;
  $("clips").replaceChildren();
  if(item)for(const n of item.clips||[]){
-  const a=document.createElement("a");
-  a.href="/video/"+encodeURIComponent(item.id)+"/clip_"+n+".mp4";
-  a.target="_blank";a.rel="noopener";
-  a.textContent="▶️ Bekijk clip "+n;
-  $("clips").append(a);
+  const id=encodeURIComponent(item.id);
+  const video=linkTo("/video/"+id+"/clip_"+n+".mp4","▶️ Bekijk clip "+n);
+  $("clips").append(video);
+  for(const lang of item.translations?.[String(n)]||[]){
+   $("clips").append(linkTo("/video/"+id+"/clip_"+n+"_"+lang+".mp4","🌐 Clip "+n+" · "+lang.toUpperCase()));
+  }
  }
+}
+function selectedClip(){
+ const job=val("job"),pick=Number(val("pick"));
+ if(!job||!pick){alert("Kies eerst een geanalyseerde video en een moment.");return null;}
+ return {job,pick};
 }
 async function launch(action){
  const payload={action};
- if(action==="analyze"){payload.url=$("videourl").value.trim();payload.permission=$("permission").checked;
-  if(!payload.permission)return alert("Bevestig eerst dat je toestemming hebt.");
-  if(!payload.url)return alert("Vul eerst de videolink in.");
+ if(action==="analyze"){
+  payload.url=val("videourl");payload.permission=$("permission").checked;
+  if(!payload.permission)return alert("Bevestig eerst dat je de rechten of toestemming hebt.");
+  if(!payload.url)return alert("Vul een toegestane videolink in.");
  }
- if(action==="clip"){payload.job=$("job").value;payload.pick=Number($("pick").value);payload.hook=$("hook").value;
-  if(!payload.job||!payload.pick)return alert("Kies eerst een video en moment.");
+ if(action==="live"){
+  payload.url=val("liveurl");payload.permission=$("livepermission").checked;payload.minutes=Number(val("liveminutes"));
+  if(!payload.permission||!payload.url)return alert("Vul een livestreamlink in en bevestig toestemming.");
  }
- try{await api("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+ if(["clip","translate","check"].includes(action)){
+  const clip=selectedClip();if(!clip)return;
+  Object.assign(payload,clip);
+  if(action==="clip"){
+    payload.hook=val("hook");payload.layout=val("layout");payload.captions=val("captions");
+  }
+  if(action==="translate")payload.langs=val("lang");
+  if(action==="check"){payload.campaign_id=val("campaignpick");payload.caption=val("caption");}
+ }
+ try{
+  await api("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   if(action==="trends")$("trendsdetails").open=true;
   if(action==="streams")$("streamsdetails").open=true;
   await refresh();
  }catch(e){alert(e.message)}
 }
 document.querySelectorAll(".action").forEach(b=>b.addEventListener("click",()=>launch(b.dataset.action)));
-$("job").addEventListener("change",updatePicks);
-$("refresh").addEventListener("click",async()=>{await refresh();await loadJobs();});
-Promise.all([refresh(),loadJobs(),loadResult("trends"),loadResult("streams")]);
+$("job").addEventListener("change",()=>{updatePicks();$("hooks").replaceChildren();});
+$("pick").addEventListener("change",()=>{$("hooks").replaceChildren();});
+$("refresh").addEventListener("click",async()=>{await refresh();await loadJobs();await loadCampaigns();await loadPosts();});
+Promise.allSettled([refresh(),loadJobs(),loadResult("trends"),loadResult("streams"),loadCampaigns(),loadPosts()]);
 setInterval(refresh,6500);
 </script>
 </body></html>
