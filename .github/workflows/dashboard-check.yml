@@ -21,8 +21,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate syntax and unit tests
         run: |
-          python3 -m py_compile dashboard/app.py dashboard/test_dashboard.py dashboard/test_trends.py scripts/trends.py
-          python3 -m unittest dashboard.test_dashboard dashboard.test_trends
+          python3 -m py_compile dashboard/app.py dashboard/workflow.py dashboard/test_dashboard.py dashboard/test_trends.py dashboard/test_workflow.py scripts/trends.py
+          python3 -m unittest dashboard.test_dashboard dashboard.test_trends dashboard.test_workflow
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path("dashboard/index.html").read_text()
+          js = text.split("<script>", 1)[1].split("</script>", 1)[0]
+          Path("/tmp/gta-dashboard.js").write_text(js)
+          PY
+          node --check /tmp/gta-dashboard.js
           bash -n .devcontainer/setup.sh .devcontainer/start.sh
           python3 -m json.tool .devcontainer/devcontainer.json >/dev/null
       - name: Start dashboard and test routes
