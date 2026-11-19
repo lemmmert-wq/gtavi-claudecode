@@ -181,7 +181,10 @@ textarea{width:100%;background:#0d1426;border:1px solid #4c5875;color:#fff;borde
   <div class="field"><label for="postviews">Echte views</label><input id="postviews" type="number" min="0" inputmode="numeric" placeholder="Onbekend"></div>
   <div class="field"><label for="postpayout">Bevestigd bedrag (alleen bij goedgekeurd/betaald)</label><input id="postpayout" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Niet bekend"></div>
  </div>
+ <div class="two">
  <div class="field"><label for="postcurrency">Munt</label><select id="postcurrency"><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+ <div class="field"><label for="postcheckpoint">Meetmoment</label><select id="postcheckpoint"><option value="other">Ander moment</option><option value="12h">Na 12 uur</option><option value="24h">Na 24 uur</option><option value="72h">Na 72 uur</option></select></div>
+ </div>
  <div class="field"><label for="postnotes">Notitie</label><input id="postnotes" placeholder="Bijv. goedgekeurd via campagnepagina"></div>
  <button class="primary wide" id="savepost">Resultaat opslaan</button>
  </div></details>
@@ -355,6 +358,20 @@ async function loadPosts(){
   const views=post.views===null?"views onbekend":Number(post.views).toLocaleString("nl-BE")+" views";
   const amount=post.confirmed_payout===null?"geen bevestigd bedrag":post.currency+" "+Number(post.confirmed_payout).toFixed(2)+" bevestigd";
   addText(b,"p",views+" · "+amount);
+  const edit=document.createElement("button");edit.className="smallbtn";edit.textContent="Werk dit resultaat bij";
+  edit.addEventListener("click",()=>{
+   $("posturl").value=post.url;
+   $("postplatform").value=post.platform||"TikTok";
+   $("poststate").value=post.state;
+   $("postcampaign").value=post.campaign_id||"";
+   $("postviews").value=post.views===null?"":post.views;
+   $("postpayout").value=post.confirmed_payout===null?"":post.confirmed_payout;
+   $("postcurrency").value=post.currency||"USD";
+   $("postnotes").value=post.notes||"";
+   const form=$("earningspanel").querySelector("details");
+   form.open=true;form.scrollIntoView({behavior:"smooth",block:"start"});
+  });
+  b.append(edit);
   target.append(b);
  }
 }
@@ -375,7 +392,7 @@ $("savecampaign").addEventListener("click",()=>saveRecord("campaigns",{
 $("savepost").addEventListener("click",()=>saveRecord("posts",{
  url:val("posturl"),platform:val("postplatform"),state:val("poststate"),
  campaign_id:val("postcampaign"),views:val("postviews"),
- confirmed_payout:val("postpayout"),currency:val("postcurrency"),notes:val("postnotes")
+ confirmed_payout:val("postpayout"),currency:val("postcurrency"),notes:val("postnotes"),checkpoint:val("postcheckpoint")
 }));
 $("suggesthooks").addEventListener("click",()=>{
  const job=jobs.find(x=>x.id===$("job").value);
