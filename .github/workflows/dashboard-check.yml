@@ -78,6 +78,10 @@ jobs:
           assert posts[0]["confirmed_payout"] == 3
           assert get("/api/liveclips")["clips"] == []
           PY
+      - name: Install FFmpeg for end-to-end video test
+        run: |
+          sudo apt-get update -qq
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg
       - name: End-to-end demo MP4 (self-created, no copyrighted footage)
         run: |
           ffmpeg -hide_banner -version | head -n 1
