@@ -95,6 +95,11 @@ def run_task(action, payload):
         elif action == "demo":
             cmd = [str(PY), "scripts/demo.py"]
             timeout = 600
+        elif action == "tomo_draft":
+            if payload.get("review_only") is not True:
+                raise ValueError("Bevestig dat dit uitsluitend een privéconcept is")
+            cmd = [str(PY), "scripts/campaign_tomo.py"]
+            timeout = 1800
         elif action == "analyze":
             url = str(payload["url"]).strip()
             cmd = [str(PY), "scripts/moments.py", url, "--top", "5", "--max-minutes", "15"]
@@ -262,7 +267,7 @@ class Handler(BaseHTTPRequestHandler):
             self.stream_video(p, download=(m[1] == "download"))
         elif path == "/api/version":
             self.reply({"revision": CODE_REVISION,
-                        "features": ["campaign_discovery", "demo_clip", "campaign_records", "clip_creation",
+                        "features": ["campaign_discovery", "demo_clip", "tomo_draft", "campaign_records", "clip_creation",
                                      "translation", "live_mode", "payout_tracking"]})
         elif path == "/api/campaigns":
             self.reply({"campaigns": list_campaigns(DATA)})
@@ -347,7 +352,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/posts":
                 return self.reply({"post": add_post(DATA, payload)}, 201)
             action = payload.get("action")
-            if action not in ("demo", "campaigns", "trends", "streams", "analyze", "clip", "translate", "check", "live"):
+            if action not in ("demo", "tomo_draft", "campaigns", "trends", "streams", "analyze", "clip", "translate", "check", "live"):
                 return self.reply({"error": "Onbekende actie"}, 400)
             if action == "analyze" and (not payload.get("permission") or not valid_url(str(payload.get("url", "")))):
                 return self.reply({"error": "Gebruik een geldige YouTube/Twitch-URL en bevestig toestemming"}, 400)
