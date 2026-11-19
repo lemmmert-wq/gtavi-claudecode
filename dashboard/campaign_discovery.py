@@ -17,6 +17,14 @@ from urllib.request import Request, urlopen
 
 LISTING_URL = "https://contentrewards.com/c/discover"
 DOMAIN = "contentrewards.com"
+# Public GTA 6 pages confirmed from the official campaign directory. These
+# links are only FALLBACK ENTRY POINTS. Their status and rates are NOT cached
+# as facts: we fetch each page again and omit it if it cannot be verified.
+FALLBACK_CAMPAIGN_URLS = (
+    "https://contentrewards.com/c/campaigns/bb66f9eb-b90e-4dd0-8cee-9f3cd566c9a0",
+    "https://contentrewards.com/c/campaigns/051002dd-5c46-43d0-a446-43f2957ba3a9",
+    "https://contentrewards.com/c/campaigns/1d2bcb00-c904-415f-aa82-f95b96baad86",
+)
 CAMPAIGN_PATH = re.compile(r"^/c/campaigns/([0-9a-fA-F-]{36})/?$")
 KEYWORDS = ("gta 6", "gta vi", "gtavi", "grand theft auto", "gta6")
 USER_AGENT = "Mozilla/5.0 (compatible; GTAClipper/1.0; public-campaign-discovery)"
@@ -170,10 +178,19 @@ def extract_details(candidate, fetch=fetch_page):
 def discover(query="gta", fetch=fetch_page):
     if query != "gta":
         raise ValueError("Onbekende campagneselectie")
-    listing = fetch(LISTING_URL)
-    candidates = find_candidates(listing, max_candidates=18)
+    warning = ""
+    try:
+        listing = fetch(LISTING_URL)
+        candidates = find_candidates(listing, max_candidates=18)
+    except (OSError, ValueError, RuntimeError) as exc:
+        candidates = []
+        warning = f"De openbare catalogus kon niet worden gelezen ({type(exc).__name__})."
     if not candidates:
-        raise RuntimeError("De publieke campagnepagina geeft geen herkenbare GTA 6-campagnelinks terug. Open de bronwebsite rechtstreeks.")
+        warning = warning or "De publieke catalogus gaf geen direct leesbare GTA 6-campagnelinks terug."
+        # Independently re-check known public URLs rather than making up
+        # "live" campaigns from past results. Never assign a rate here.
+        candidates = [{"url": url, "listing_text": "GTA 6 campagne"}
+                      for url in FALLBACK_CAMPAIGN_URLS]
     # Public campaign details, never login pages or private API endpoints.
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = [pool.submit(extract_details, item, fetch) for item in candidates]
@@ -185,6 +202,11 @@ def discover(query="gta", fetch=fetch_page):
                     results.append(value)
             except Exception:
                 failed += 1
+    if not results and failed >= len(candidates):
+        raise RuntimeError(
+            "Content Rewards geeft momenteel geen leesbare openbare campagnepagina's aan de Codespace. "
+            "Open de campagnewebsite rechtstreeks via de links hieronder; de app verzint geen campagnes."
+        )
     results.sort(key=lambda x: (x["status"] != "accepteert clips volgens publieke pagina",
                                 -(x["rate_per_1k"] or 0), x["name"].lower()))
     return {
@@ -192,7 +214,9 @@ def discover(query="gta", fetch=fetch_page):
         "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "items": results,
         "failed": failed,
-        "notice": "Automatische openbare zoekresultaten. Geen garantie op campagnebeschikbaarheid, toestemming, Belgische deelname of uitbetaling.",
+        "notice": (warning + " " if warning else "") +
+                  "Opnieuw gecontroleerde openbare campagnepagina's. "
+                  "Geen garantie op blijvende beschikbaarheid, toestemming, Belgische deelname of uitbetaling.",
     }
 
 
