@@ -125,6 +125,12 @@ jobs:
           request=urllib.request.Request(root+"/video/demo-local/clip_1.mp4",headers={"Range":"bytes=0-1023"})
           with urllib.request.urlopen(request,timeout=20) as response:
               assert response.status==206
+              assert "inline" in response.headers["Content-Disposition"]
               assert len(response.read())==1024
-          print("Mobile API -> real validated MP4 -> browser preview verified:",output.stat().st_size,"bytes")
+          with urllib.request.urlopen(root+"/download/demo-local/clip_1.mp4",timeout=20) as response:
+              assert response.status==200
+              assert "attachment" in response.headers["Content-Disposition"]
+              assert response.headers["Content-Type"]=="video/mp4"
+              assert int(response.headers["Content-Length"])==output.stat().st_size
+          print("Mobile API -> validated MP4 -> preview and download verified:",output.stat().st_size,"bytes")
           PY
