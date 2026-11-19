@@ -251,15 +251,15 @@ class Handler(BaseHTTPRequestHandler):
                 except (ValueError, OSError, KeyError):
                     continue
             self.reply({"jobs": jobs})
-        elif path.startswith("/video/"):
-            m = re.fullmatch(r"/video/([a-z0-9-]{3,70})/clip_([0-9]{1,2})(?:_(es|pt|de|ru))?\.mp4", path)
+        elif path.startswith(("/video/", "/download/")):
+            m = re.fullmatch(r"/(video|download)/([a-z0-9-]{3,70})/clip_([0-9]{1,2})(?:_(es|pt|de|ru))?\.mp4", path)
             if not m:
                 return self.send_error(404)
-            suffix = ("_" + m[3]) if m[3] else ""
-            p = ROOT / "jobs" / m[1] / "edits" / ("clip_" + str(int(m[2])) + suffix + ".mp4")
+            suffix = ("_" + m[4]) if m[4] else ""
+            p = ROOT / "jobs" / m[2] / "edits" / ("clip_" + str(int(m[3])) + suffix + ".mp4")
             if not p.is_file():
                 return self.send_error(404)
-            self.stream_video(p)
+            self.stream_video(p, download=(m[1] == "download"))
         elif path == "/api/version":
             self.reply({"revision": CODE_REVISION,
                         "features": ["campaign_discovery", "demo_clip", "campaign_records", "clip_creation",
@@ -291,7 +291,7 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self.send_error(404)
 
-    def stream_video(self, p):
+    def stream_video(self, p, download=False):
         size = p.stat().st_size
         start, end = 0, size - 1
         header = self.headers.get("Range", "")
@@ -310,7 +310,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "video/mp4")
         self.send_header("Content-Length", str(end - start + 1))
         self.send_header("Accept-Ranges", "bytes")
-        self.send_header("Content-Disposition", 'inline; filename="' + p.name + '"')
+        mode = "attachment" if download else "inline"
+        self.send_header("Content-Disposition", mode + '; filename="' + p.name + '"')
         if partial:
             self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
         self.end_headers()
