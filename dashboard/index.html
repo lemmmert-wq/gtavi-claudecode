@@ -137,6 +137,13 @@ textarea{width:100%;background:#0d1426;border:1px solid #4c5875;color:#fff;borde
  <button class="action wide" data-action="live">● Start livefragmentanalyse</button>
  <div class="padded"><strong style="font-size:13px">Gevonden ruwe liveclips</strong><div id="liveclips" class="clips"><small>Nog geen livefragmenten opgeslagen.</small></div></div>
 </section>
+<section class="panel" id="demopanel">
+  <h2>🧪 Eén-klik technische proefclip</h2>
+  <p>De app maakt zelf een korte testvideo. Daarna gebruikt hij de echte clipknipper om een verticale clip met ondertitels te maken en technisch te controleren. Geen YouTube-video, streamerrechten of account nodig.</p>
+  <button class="primary wide action" data-action="demo">🎬 Maak mijn proefclip</button>
+  <p><small>Deze proefclip gebruikt testbeelden en een vooraf ingevulde voorbeeldtekst, <b>geen echte Whisper-AI of GTA-beelden</b>. Publiceer hem niet.</small></p>
+  <div id="demolink" class="clips"></div>
+</section>
 <section class="panel">
   <h2>4 · Interessante momenten zoeken</h2>
   <p>Gebruik enkel je eigen video's of streams waarvoor je expliciete toestemming hebt. De video wordt gedownload voor analyse en dit kan veel verwerkingstijd en opslag kosten.</p>
@@ -484,7 +491,15 @@ $("suggesthooks").addEventListener("click",()=>{
   panel.append(button);
  }
 });
+function showDemoClip(){
+ const holder=$("demolink");holder.replaceChildren();
+ const found=jobs.find(x=>x.id==="demo-local"&&(x.clips||[]).includes(1));
+ if(!found)return;
+ const a=linkTo("/video/demo-local/clip_1.mp4","▶️ Bekijk je technische proefclip");
+ holder.append(a);
+}
 function updatePicks(){
+ showDemoClip();
  const item=jobs.find(j=>j.id===$("job").value);
  const old=$("pick").value;
  $("pick").replaceChildren();
@@ -508,8 +523,8 @@ function selectedClip(){
  return {job,pick};
 }
 async function launch(action){
- if(action==="campaigns"&&!(await checkCampaignBackend())){
-   alert("De nieuwe zoekknop staat al op je gsm, maar je Codespace-server is nog oud. Stop en start de BESTAANDE Codespace opnieuw via github.com/codespaces.");
+ if((action==="campaigns"||action==="demo")&&!(await checkCampaignBackend())){
+   alert("De webserver gebruikt nog oude code. Stop en herstart dezelfde Codespace via github.com/codespaces om deze functie te activeren.");
    return;
  }
  const payload={action};
