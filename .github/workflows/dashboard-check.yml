@@ -4,12 +4,18 @@ on:
     paths:
       - 'dashboard/**'
       - 'scripts/trends.py'
+      - 'scripts/demo.py'
+      - 'scripts/cut.py'
+      - 'scripts/check.py'
       - '.devcontainer/**'
       - '.github/workflows/dashboard-check.yml'
   pull_request:
     paths:
       - 'dashboard/**'
       - 'scripts/trends.py'
+      - 'scripts/demo.py'
+      - 'scripts/cut.py'
+      - 'scripts/check.py'
       - '.devcontainer/**'
       - '.github/workflows/dashboard-check.yml'
 jobs:
@@ -71,4 +77,14 @@ jobs:
           assert len(posts) == 1 and posts[0]["views"] == 456
           assert posts[0]["confirmed_payout"] == 3
           assert get("/api/liveclips")["clips"] == []
+          PY
+      - name: End-to-end demo MP4 (self-created, no copyrighted footage)
+        run: |
+          ffmpeg -hide_banner -version | head -n 1
+          python3 scripts/demo.py
+          python3 - <<'PY'
+          from pathlib import Path
+          output = Path("jobs/demo-local/edits/clip_1.mp4")
+          assert output.exists() and output.stat().st_size > 10000
+          print("Real MP4 produced:", output.stat().st_size, "bytes")
           PY
