@@ -63,6 +63,24 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(saved["confirmed_payout"], 5)
         self.assertEqual(list_posts(self.folder)[0]["state"], "paid")
 
+    def test_post_updates_do_not_double_count(self):
+        base = {"url": "https://www.youtube.com/watch?v=abcdefghijk", "platform": "YouTube",
+                "state": "posted", "views": 120, "checkpoint": "12h"}
+        first = add_post(self.folder, base)
+        second = add_post(self.folder, {
+            **base, "views": 800, "checkpoint": "24h", "state": "approved",
+            "confirmed_payout": 12,
+        })
+        third = add_post(self.folder, {
+            **base, "views": 1250, "checkpoint": "72h", "state": "paid",
+            "confirmed_payout": "",
+        })
+        self.assertEqual(first["id"], second["id"])
+        self.assertEqual(second["id"], third["id"])
+        self.assertEqual(len(list_posts(self.folder)), 1)
+        self.assertEqual(third["confirmed_payout"], 12)
+        self.assertEqual([x["checkpoint"] for x in third["history"]], ["12h", "24h", "72h"])
+
     def test_campaign_does_not_accept_fictional_negative_rate(self):
         with self.assertRaises(ValueError):
             add_campaign(self.folder, {
