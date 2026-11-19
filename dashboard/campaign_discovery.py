@@ -138,10 +138,10 @@ def extract_details(candidate, fetch=fetch_page):
                for w in KEYWORDS):
         return None
     status = "onbekend"
-    if re.search(r"\bAccepting clips\b", text, re.I):
-        status = "accepteert clips volgens publieke pagina"
-    elif re.search(r"\b(?:Closed|Ended|Not accepting clips|Campaign completed)\b", text, re.I):
+    if re.search(r"\b(?:Closed|Ended|Not accepting clips|Campaign completed)\b", text, re.I):
         status = "niet actief volgens publieke pagina"
+    elif re.search(r"\bAccepting clips\b", text, re.I):
+        status = "accepteert clips volgens publieke pagina"
     # Read only amounts that are labelled on the publicly accessible campaign page.
     rate_match = re.search(r"Per\s*1K\s*views\s*\$\s*([\d,]+(?:\.\d+)?)", text, re.I)
     max_match = re.search(r"Max\s*payout\s*\$\s*([\d,]+(?:\.\d+)?)", text, re.I)
@@ -168,7 +168,7 @@ def extract_details(candidate, fetch=fetch_page):
 
 
 def discover(query="gta", fetch=fetch_page):
-    if query not in ("gta", "gaming"):
+    if query != "gta":
         raise ValueError("Onbekende campagneselectie")
     listing = fetch(LISTING_URL)
     candidates = find_candidates(listing, max_candidates=18)
