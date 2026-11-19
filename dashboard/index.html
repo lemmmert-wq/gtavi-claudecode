@@ -49,6 +49,20 @@ a{color:#ffbd89}
 .videocard{background:#0e162a;border:1px solid #2d3c56;border-radius:12px;padding:13px;overflow-wrap:anywhere}
 .videocard a{display:block;font-size:14px;font-weight:700;color:#ffc08f;text-decoration:none}
 .videometa{font-size:11px;line-height:1.5;color:#abb7d0;margin-top:6px}
+.external{display:flex;gap:8px;flex-wrap:wrap}.external a{background:#253458;color:#d5e5ff;border-radius:10px;padding:8px 11px;text-decoration:none;font-size:12px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.two label{margin:0}
+.stack{display:grid;gap:10px}.smallbtn{min-height:38px;padding:10px 12px;font-size:12px;text-align:center}
+.field{display:grid;gap:4px}.field label{margin:0}
+textarea{width:100%;background:#0d1426;border:1px solid #4c5875;color:#fff;border-radius:11px;min-height:90px;padding:10px;font-size:14px}
+.muted{font-size:12px;color:#9dadc8}
+.help{font-size:11px;color:#a5b4cb}
+.padded{padding-top:12px}
+.listbox{padding:12px;border-radius:12px;background:#0e162a;border:1px solid #33415b;margin:9px 0}
+.listbox strong{font-size:14px}
+.listbox p{font-size:12px}
+.listbox a{font-size:12px}
+.tag{display:inline-block;font-size:11px;border-radius:20px;background:#3b4563;color:#d8e4fb;padding:3px 8px;margin-top:6px}
+
 </style>
 </head>
 <body>
@@ -70,8 +84,54 @@ a{color:#ffbd89}
   <details id="trendsdetails"><summary>Gevonden GTA 6-video's</summary><div id="trendsout" class="videos">Nog geen zoekopdracht uitgevoerd</div></details>
   <details id="streamsdetails"><summary>Gevonden streams</summary><pre id="streamsout">Nog geen zoekopdracht uitgevoerd</pre></details>
 </section>
+
+<section class="panel" id="campaignpanel">
+ <h2>2 · 💰 Betaalde campagnes</h2>
+ <p>Volgens de originele GitHub campaign-finder: zoek actuele campagnes, lees alle voorwaarden en bewaar de regels hier. Niets is automatisch gecontroleerd of goedgekeurd.</p>
+ <div class="external"><a href="https://contentrewards.com/" target="_blank" rel="noopener noreferrer">Content Rewards ↗</a><a href="https://whop.com/discover/" target="_blank" rel="noopener noreferrer">Whop ↗</a><a href="https://www.clip.tech/clippers" target="_blank" rel="noopener noreferrer">Clip.tech ↗</a></div>
+ <div id="campaignlist" class="padded muted">Nog geen campagnes vastgelegd.</div>
+ <details><summary>+ Campagne en voorwaarden bewaren</summary>
+ <div class="stack padded">
+ <div class="field"><label for="cname">Naam campagne *</label><input id="cname" placeholder="Naam zoals op de campagnepagina"></div>
+ <div class="field"><label for="curl">Link naar de originele campagne *</label><input id="curl" type="url" inputmode="url" placeholder="https://…"></div>
+ <div class="two">
+ <div class="field"><label for="ccreator">Maker/merk</label><input id="ccreator" placeholder="Streamernaam"></div>
+ <div class="field"><label for="cplatforms">Platforms</label><input id="cplatforms" placeholder="TikTok, Reels"></div>
+ </div>
+ <div class="field"><label for="csource">Toegestaan bronmateriaal</label><input id="csource" placeholder="Welke maker/streams mag je gebruiken?"></div>
+ <div class="two">
+ <div class="field"><label for="crate">Betaling / 1.000 views</label><input id="crate" inputmode="decimal" type="number" step="0.01" min="0" placeholder="Onbekend"></div>
+ <div class="field"><label for="ccurrency">Munt</label><select id="ccurrency"><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+ </div>
+ <div class="two">
+ <div class="field"><label for="ccap">Max. per clip</label><input id="ccap" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Onbekend"></div>
+ <div class="field"><label for="cbudget">Budget resterend</label><input id="cbudget" placeholder="Onbekend"></div>
+ </div>
+ <div class="two">
+ <div class="field"><label for="cmin">Min. seconden</label><input id="cmin" type="number" min="0" inputmode="decimal" placeholder="Onbekend"></div>
+ <div class="field"><label for="cmax">Max. seconden</label><input id="cmax" type="number" min="0" inputmode="decimal" placeholder="Onbekend"></div>
+ </div>
+ <div class="two">
+ <div class="field"><label for="ctags">Verplichte hashtags</label><input id="ctags" placeholder="#gta6 #voorbeeld"></div>
+ <div class="field"><label for="cmention">Verplichte vermelding</label><input id="cmention" placeholder="@maker"></div>
+ </div>
+ <div class="field"><label for="crules">Overige regels (verplicht lezen)</label><textarea id="crules" placeholder="Gebruik alleen beeld van…; verplichte overlay; krediet; landrestricties; toelating…"></textarea></div>
+ <div class="checkline"><input id="creviewed" type="checkbox"><label for="creviewed">Ik heb de actuele regels op de campagnepagina gelezen en correct overgenomen. Dit bevestigt niet dat de campagne nog open is.</label></div>
+ <button id="savecampaign" class="wide primary">Campagne lokaal bewaren</button>
+ <small>Gegevens blijven in je Codespace staan. Tarieven en budgetten kunnen veranderen.</small>
+ </div></details>
+</section>
+
+<section class="panel" id="livepanel">
+ <h2>3 · 🔴 Live-modus</h2>
+ <p>Gebruik het originele live.py-script om gedurende een beperkte tijd een toegestane livestream te volgen en chatpieken te knippen. De ruwe fragmenten zijn nog geen publicatieklare Shorts.</p>
+ <div class="field"><label for="liveurl">Link naar toegestane livestream</label><input id="liveurl" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=…"></div>
+ <div class="field"><label for="liveminutes">Opnameduur (max. 15 min)</label><select id="liveminutes"><option value="3">3 minuten</option><option value="5" selected>5 minuten</option><option value="10">10 minuten</option><option value="15">15 minuten</option></select></div>
+ <div class="checkline"><input id="livepermission" type="checkbox"><label for="livepermission">Ik heb rechten of expliciete toestemming voor het opnemen en gebruiken van deze stream.</label></div>
+ <button class="action wide" data-action="live">● Start livefragmentanalyse</button>
+</section>
 <section class="panel">
-  <h2>2 · Interessante momenten zoeken</h2>
+  <h2>4 · Interessante momenten zoeken</h2>
   <p>Gebruik enkel je eigen video's of streams waarvoor je expliciete toestemming hebt. De video wordt gedownload voor analyse en dit kan veel verwerkingstijd en opslag kosten.</p>
   <label for="videourl">Link naar toegestane YouTube-video of Twitch-VOD</label>
   <input id="videourl" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off">
@@ -79,13 +139,52 @@ a{color:#ffbd89}
   <button class="primary wide action" data-action="analyze">✨ Zoek 5 clipmomenten</button>
 </section>
 <section class="panel">
-  <h2>3 · Clip maken en bekijken</h2>
+  <h2>5 · Clip maken en bekijken</h2>
   <p>Na analyse kies je een moment. De clip krijgt verticaal formaat en ondertitels. Publiceren gebeurt nooit automatisch.</p>
   <label for="job">Geanalyseerde video</label><select id="job"><option value="">Nog geen analyse</option></select>
   <label for="pick">Moment</label><select id="pick"><option value="">Selecteer eerst een video</option></select>
-  <label for="hook">Titel bovenaan de clip (optioneel)</label><input id="hook" value="Dit zag niemand aankomen">
+  <label for="hook">Pakkende openingszin (zelf controleren)</label><input id="hook" value="Dit zag niemand aankomen">
+  <button id="suggesthooks" class="smallbtn" style="margin-top:8px;width:100%">✨ 3 hook-ideeën uit het geselecteerde moment</button>
+  <div id="hooks" class="clips"></div>
+  <div class="two padded">
+   <div class="field"><label for="layout">Videolayout</label><select id="layout"><option value="blur">Game + vervaagde achtergrond</option><option value="fill">Volledig verticaal</option><option value="facecam">Facecam bovenaan</option><option value="react">Streamer boven, game onder</option></select></div>
+   <div class="field"><label for="captions">Ondertitels</label><select id="captions"><option value="word">Woord voor woord</option><option value="bubble">Tekstbubbels</option><option value="none">Geen</option></select></div>
+  </div>
   <button class="primary wide action" style="margin-top:14px" data-action="clip">✂️ Maak verticale clip</button>
   <div id="clips" class="clips"></div>
+  <details><summary>🌐 Vertaal een gemaakte clip</summary><p>De originele vertaler maakt ondertitels in een andere taal. Controleer de vertaling voor publicatie.</p>
+  <div class="field"><label for="lang">Taal</label><select id="lang"><option value="es">Spaans</option><option value="pt">Portugees</option><option value="de">Duits</option><option value="ru">Russisch</option></select></div>
+  <button class="wide action padded" data-action="translate" style="margin-top:10px">🌐 Vertaal clip</button></details>
+  <details><summary>✅ Technische controle & campagnevoorwaarden</summary>
+  <p>Deze controle checkt het bestand, de duur, hashtags en vermelding. Ze kan geen auteursrechten, campagnesluiting of echte goedkeuring controleren.</p>
+  <div class="field"><label for="campaignpick">Campagne</label><select id="campaignpick"><option value="">Zonder campagne (alleen technisch)</option></select></div>
+  <div class="field"><label for="caption">Bijschrift voor sociale media</label><textarea id="caption" placeholder="Titel, credits, verplichte hashtags en vermeldingen"></textarea></div>
+  <button class="wide action" data-action="check">✅ Controleer de clip</button>
+  </details>
+</section>
+
+<section class="panel" id="earningspanel">
+ <h2>6 · 📊 Prestaties & inkomsten</h2>
+ <p>Volgens de originele learning-loop bewaren we alleen echte cijfers die jij opgeeft. Een schatting is geen uitbetaling.</p>
+ <div id="earningssummary" class="muted">Geen bevestigde uitbetalingen.</div>
+ <div id="postlist"></div>
+ <details><summary>+ Gepubliceerde clip en resultaat registreren</summary>
+ <div class="stack padded">
+ <div class="field"><label for="posturl">Link naar jouw gepubliceerde clip *</label><input id="posturl" type="url" inputmode="url" placeholder="https://www.tiktok.com/…"></div>
+ <div class="two">
+  <div class="field"><label for="postplatform">Platform</label><select id="postplatform"><option>TikTok</option><option>Instagram</option><option>YouTube</option><option>X</option></select></div>
+  <div class="field"><label for="poststate">Status</label><select id="poststate"><option value="posted">Gepubliceerd</option><option value="submitted">Ingediend</option><option value="approved">Goedgekeurd</option><option value="paid">Betaald</option></select></div>
+ </div>
+ <div class="field"><label for="postcampaign">Campagne (optioneel)</label><select id="postcampaign"><option value="">Geen</option></select></div>
+ <div class="two">
+  <div class="field"><label for="postviews">Echte views</label><input id="postviews" type="number" min="0" inputmode="numeric" placeholder="Onbekend"></div>
+  <div class="field"><label for="postpayout">Bevestigd bedrag (alleen bij goedgekeurd/betaald)</label><input id="postpayout" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Niet bekend"></div>
+ </div>
+ <div class="field"><label for="postcurrency">Munt</label><select id="postcurrency"><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+ <div class="field"><label for="postnotes">Notitie</label><input id="postnotes" placeholder="Bijv. goedgekeurd via campagnepagina"></div>
+ <button class="primary wide" id="savepost">Resultaat opslaan</button>
+ </div></details>
+ <p>Bij 12, 24 en 72 uur kun je de weergavecijfers opnieuw noteren. Registraties worden niet automatisch opgehaald.</p>
 </section>
 <section class="panel">
   <div class="statusline"><h2 style="margin:0">Activiteitenlog</h2><button id="refresh" style="min-height:36px;padding:8px 12px;font-size:12px">Vernieuw</button></div>
