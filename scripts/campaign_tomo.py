@@ -16,6 +16,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 JOB = ROOT / "jobs" / "tomo-unboxing"
 SRC = "https://www.youtube.com/watch?v=w7OmfMXergI"
 CAMPAIGN = "https://contentrewards.com/c/campaigns/df6de26f-86ec-4782-b818-1fc8053b99a4"
