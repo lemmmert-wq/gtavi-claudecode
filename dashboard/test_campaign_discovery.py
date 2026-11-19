@@ -61,9 +61,26 @@ class PublicCampaignFinderTests(unittest.TestCase):
             save_discovery(Path(directory), found)
             self.assertEqual(read_discovery(Path(directory))["failed"], 1)
 
-    def test_empty_listing_fails_honestly(self):
-        with self.assertRaises(RuntimeError):
-            discover(fetch=lambda _: page('<html><p>Loading...</p></html>'))
+    def test_empty_listing_falls_back_to_verified_public_urls(self):
+        def mock_fetch(url):
+            if "/discover" in url:
+                return page('<html><p>Loading...</p></html>')
+            if url.endswith("051002dd-5c46-43d0-a446-43f2957ba3a9"):
+                return page('<html><h1>Dasgasd3m x RUCKUS | GTA 6</h1>'
+                            '<p>Accepting clips</p><p>Per 1K views $2.00</p></html>')
+            raise OSError("not reachable")
+        got = discover(fetch=mock_fetch)
+        self.assertEqual(len(got["items"]), 1)
+        self.assertEqual(got["items"][0]["rate_per_1k"], 2)
+        self.assertIn("catalogus", got["notice"])
+
+    def test_all_public_campaign_pages_blocked_gives_clear_error(self):
+        def mock_fetch(url):
+            if "/discover" in url:
+                return page('<html><p>Loading...</p></html>')
+            raise OSError("blocked")
+        with self.assertRaisesRegex(RuntimeError, "Content Rewards"):
+            discover(fetch=mock_fetch)
 
 
 if __name__ == "__main__":
