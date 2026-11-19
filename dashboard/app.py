@@ -139,7 +139,16 @@ class Handler(BaseHTTPRequestHandler):
             if kind not in ("trends", "streams"):
                 return self.reply({"error": "Onbekende resultaten"}, 400)
             p = DATA / (kind + ".md")
-            self.reply({"text": p.read_text(errors="replace")[-42000:] if p.exists() else ""})
+            response = {"text": p.read_text(errors="replace")[-42000:] if p.exists() else ""}
+            if kind == "trends":
+                sidecar = DATA / "trends.json"
+                try:
+                    summary = json.loads(sidecar.read_text(encoding="utf-8")) if sidecar.exists() else {}
+                    response["items"] = summary.get("items", [])
+                    response["meta"] = summary.get("meta", {})
+                except (ValueError, OSError):
+                    response["items"] = []
+            self.reply(response)
         elif path == "/api/jobs":
             jobs = []
             for p in sorted((ROOT / "jobs").glob("*/candidates.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:20]:
