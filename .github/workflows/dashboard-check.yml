@@ -82,13 +82,49 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg
-      - name: End-to-end demo MP4 (self-created, no copyrighted footage)
+      - name: End-to-end demo through mobile API including actual MP4 playback
         run: |
           ffmpeg -hide_banner -version | head -n 1
-          python3 scripts/demo.py
+          mkdir -p .venv/bin
+          ln -s "$(command -v python3)" .venv/bin/python
+          python3 dashboard/app.py > /tmp/dashboard-demo.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           python3 - <<'PY'
+          import json, time, urllib.request
           from pathlib import Path
-          output = Path("jobs/demo-local/edits/clip_1.mp4")
-          assert output.exists() and output.stat().st_size > 10000
-          print("Real MP4 produced:", output.stat().st_size, "bytes")
+          root = "http://127.0.0.1:8765"
+          def get(path):
+              with urllib.request.urlopen(root+path, timeout=10) as response:
+                  return json.load(response)
+          for _ in range(15):
+              try:
+                  get("/api/status")
+                  break
+              except Exception:
+                  time.sleep(0.4)
+          request = urllib.request.Request(root+"/api/run", method="POST",
+              data=b'{"action":"demo"}',
+              headers={"Content-Type":"application/json","Origin":root})
+          with urllib.request.urlopen(request, timeout=10) as response:
+              assert response.status==202
+          end=time.monotonic()+240
+          while time.monotonic()<end:
+              status=get("/api/status")
+              if not status["busy"] and status["task"]=="demo":
+                  assert not status["failed"],status["message"]
+                  assert "TEST GESLAAGD" in status["message"],status["message"]
+                  break
+              time.sleep(1)
+          else:
+              raise AssertionError("Demo action did not finish")
+          jobs=get("/api/jobs")["jobs"]
+          assert any(j["id"]=="demo-local" and 1 in j["clips"] for j in jobs),jobs
+          output=Path("jobs/demo-local/edits/clip_1.mp4")
+          assert output.is_file() and output.stat().st_size>10000
+          request=urllib.request.Request(root+"/video/demo-local/clip_1.mp4",headers={"Range":"bytes=0-1023"})
+          with urllib.request.urlopen(request,timeout=20) as response:
+              assert response.status==206
+              assert len(response.read())==1024
+          print("Mobile API -> real validated MP4 -> browser preview verified:",output.stat().st_size,"bytes")
           PY
