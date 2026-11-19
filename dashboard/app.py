@@ -244,6 +244,24 @@ class Handler(BaseHTTPRequestHandler):
             self.reply({"campaigns": list_campaigns(DATA)})
         elif path == "/api/posts":
             self.reply({"posts": list_posts(DATA)})
+        elif path == "/api/liveclips":
+            results = []
+            for f in sorted((ROOT / "jobs").glob("*/live/spike_*.mp4"),
+                            key=lambda item: item.stat().st_mtime, reverse=True)[:25]:
+                m = re.fullmatch(r"spike_([0-9]{1,3})", f.stem)
+                if m and re.fullmatch(r"[a-z0-9-]{3,70}", f.parent.parent.name):
+                    results.append({"url": "/live/" + f.parent.parent.name + "/" + f.name,
+                                    "job": f.parent.parent.name, "clip": int(m[1]),
+                                    "size_bytes": f.stat().st_size})
+            self.reply({"clips": results})
+        elif path.startswith("/live/"):
+            m = re.fullmatch(r"/live/([a-z0-9-]{3,70})/spike_([0-9]{1,3})\\.mp4", path)
+            if not m:
+                return self.send_error(404)
+            p = ROOT / "jobs" / m[1] / "live" / ("spike_" + str(int(m[2])) + ".mp4")
+            if not p.is_file():
+                return self.send_error(404)
+            self.stream_video(p)
         else:
             self.send_error(404)
 
