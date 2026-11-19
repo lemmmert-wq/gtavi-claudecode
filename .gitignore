@@ -2,6 +2,7 @@
 __pycache__/
 jobs/
 test/
+.dashboard/
 *.mp4
 *.wav
 *.ts
