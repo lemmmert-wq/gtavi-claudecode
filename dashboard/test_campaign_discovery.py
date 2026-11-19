@@ -54,12 +54,8 @@ class PublicCampaignFinderTests(unittest.TestCase):
             if "/discover" in url:
                 return listing
             raise OSError("connection refused")
-        found = discover(fetch=mock_fetch)
-        self.assertEqual(found["items"], [])
-        self.assertEqual(found["failed"], 1)
-        with tempfile.TemporaryDirectory() as directory:
-            save_discovery(Path(directory), found)
-            self.assertEqual(read_discovery(Path(directory))["failed"], 1)
+        with self.assertRaisesRegex(RuntimeError, "Content Rewards"):
+            discover(fetch=mock_fetch)
 
     def test_empty_listing_falls_back_to_verified_public_urls(self):
         def mock_fetch(url):
