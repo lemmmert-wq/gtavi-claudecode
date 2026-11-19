@@ -129,6 +129,7 @@ textarea{width:100%;background:#0d1426;border:1px solid #4c5875;color:#fff;borde
  <div class="field"><label for="liveminutes">Opnameduur (max. 15 min)</label><select id="liveminutes"><option value="3">3 minuten</option><option value="5" selected>5 minuten</option><option value="10">10 minuten</option><option value="15">15 minuten</option></select></div>
  <div class="checkline"><input id="livepermission" type="checkbox"><label for="livepermission">Ik heb rechten of expliciete toestemming voor het opnemen en gebruiken van deze stream.</label></div>
  <button class="action wide" data-action="live">● Start livefragmentanalyse</button>
+ <div class="padded"><strong style="font-size:13px">Gevonden ruwe liveclips</strong><div id="liveclips" class="clips"><small>Nog geen livefragmenten opgeslagen.</small></div></div>
 </section>
 <section class="panel">
   <h2>4 · Interessante momenten zoeken</h2>
@@ -219,7 +220,7 @@ async function refresh(){
   $("output").textContent=s.message||"Geen resultaat";
   document.querySelectorAll(".action").forEach(b=>b.disabled=s.busy||!available);
   if(lastBusy===true && !s.busy){
-    await Promise.all([loadResult("trends"),loadResult("streams"),loadJobs()]);
+    await Promise.all([loadResult("trends"),loadResult("streams"),loadJobs(),loadLiveClips()]);
   }
   lastBusy=s.busy;
  }catch(e){ showBadge("Geen verbinding","bad");$("system").textContent=e.message; }
@@ -324,6 +325,16 @@ async function loadCampaigns(){
   for(const item of campaigns)select.add(new Option(item.name,item.id));
   if(campaigns.some(x=>x.id===old))select.value=old;
  }
+}
+async function loadLiveClips(){
+ try{
+  const d=await api("/api/liveclips");
+  const target=$("liveclips");target.replaceChildren();
+  if(!d.clips?.length){addText(target,"small","Nog geen livefragmenten opgeslagen.");return;}
+  for(const x of d.clips){
+    target.append(linkTo(x.url,"▶️ Liveclip "+x.clip+" ("+(x.size_bytes/1024/1024).toFixed(1)+" MB)"));
+  }
+ }catch(e){addText($("liveclips"),"small","Liveclips nog niet beschikbaar: "+e.message);}
 }
 async function loadPosts(){
  const d=await api("/api/posts");posts=d.posts||[];
@@ -437,7 +448,7 @@ document.querySelectorAll(".action").forEach(b=>b.addEventListener("click",()=>l
 $("job").addEventListener("change",()=>{updatePicks();$("hooks").replaceChildren();});
 $("pick").addEventListener("change",()=>{$("hooks").replaceChildren();});
 $("refresh").addEventListener("click",async()=>{await refresh();await loadJobs();await loadCampaigns();await loadPosts();});
-Promise.allSettled([refresh(),loadJobs(),loadResult("trends"),loadResult("streams"),loadCampaigns(),loadPosts()]);
+Promise.allSettled([refresh(),loadJobs(),loadResult("trends"),loadResult("streams"),loadCampaigns(),loadPosts(),loadLiveClips()]);
 setInterval(refresh,6500);
 </script>
 </body></html>
