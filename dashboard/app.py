@@ -258,7 +258,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_error(404)
             self.stream_video(p)
         elif path == "/api/version":
-            self.reply({"revision": CODE_REVISION})
+            self.reply({"revision": CODE_REVISION,
+                        "features": ["campaign_discovery", "campaign_records", "clip_creation",
+                                     "translation", "live_mode", "payout_tracking"]})
         elif path == "/api/campaigns":
             self.reply({"campaigns": list_campaigns(DATA)})
         elif path == "/api/discover":
