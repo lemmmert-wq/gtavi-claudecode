@@ -153,10 +153,33 @@ function renderTrends(data){
  if(data.meta?.details_failed)note("Bij "+data.meta.details_failed+" video(s) ontbreken volledige YouTube-gegevens.");
  const link=document.createElement("a");link.href="https://www.youtube.com/results?search_query=gta+6";link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open GTA 6-zoekresultaten op YouTube";target.append(link);
 }
+function parseLegacyTrends(raw){
+ // Backwards compatibility: a Codespace may still be running an older
+ // dashboard server which returns only the Markdown report.
+ const lines=String(raw||"").split(/\r?\n/);
+ const items=[];
+ for(const line of lines){
+  const m=line.match(/^\s*-\s+\[([^\]]+)\]\((https:\/\/www\.youtube\.com\/watch\?v=[\w-]{11})\)\s+—\s+(.+?)\s+·\s+([\d,.]+)\s+views\s+·\s+(.+)$/);
+  if(!m)continue;
+  items.push({title:m[1],url:m[2],channel:m[3],
+    views:Number(m[4].replace(/[,\.]/g,""))||0,
+    freshness:m[5].includes("dag bekend")?"day":"unknown",age_hours:null,views_per_hour:null});
+ }
+ return {items,meta:{},legacy:true};
+}
 async function loadResult(kind){
- try{const d=await api("/api/results?kind="+kind);
-  if(kind==="trends"&&Array.isArray(d.items))renderTrends(d);
-  else $(kind+"out").textContent=d.text||"Nog geen resultaten";
+ try{
+  const d=await api("/api/results?kind="+kind);
+  if(kind==="trends"){
+   const data=Array.isArray(d.items)?d:parseLegacyTrends(d.text);
+   renderTrends(data);
+   if(data.legacy&&data.items.length===0&&d.text){
+    const info=document.createElement("details");
+    const summary=document.createElement("summary");summary.textContent="Technische zoekuitvoer";
+    const log=document.createElement("pre");log.textContent=d.text;
+    info.append(summary,log);$("trendsout").append(info);
+   }
+  }else $(kind+"out").textContent=d.text||"Nog geen resultaten";
  }catch(e){$(kind+"out").textContent=e.message}
 }
 async function loadJobs(){
