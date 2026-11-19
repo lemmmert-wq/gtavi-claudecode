@@ -89,6 +89,9 @@ textarea{width:100%;background:#0d1426;border:1px solid #4c5875;color:#fff;borde
  <h2>2 · 💰 Betaalde campagnes</h2>
  <p>Zoek zelf openbare GTA 6-clipcampagnes zonder websites af te lopen. Bekijk daarna altijd de originele voorwaarden, bronrechten en Belgische deelname.</p>
  <button class="primary action wide" data-action="campaigns" style="margin:12px 0">🔎 Zoek betaalde GTA 6-campagnes<span class="hint">Publieke campagnes van Content Rewards</span></button>
+ <div id="servernotice" role="status" style="display:none;background:#51353a;color:#ffe0df;border:1px solid #955866;border-radius:11px;padding:12px;margin:10px 0;font-size:13px">
+ De webserver gebruikt nog een oudere versie. Ga naar <a href="https://github.com/codespaces" target="_blank" rel="noopener noreferrer">GitHub Codespaces</a>, kies bij jouw GTA Codespace via <b>… → Stop codespace</b> en open diezelfde Codespace daarna opnieuw. Dit herlaadt de nieuwe servercode. Maak geen nieuwe Codespace aan.
+ </div>
  <div id="discoverydate" class="muted">Nog niet gezocht.</div>
  <div id="discoveryresults" class="padded muted">Hier verschijnen de gevonden campagnes.</div>
  <div class="external"><a href="https://contentrewards.com/" target="_blank" rel="noopener noreferrer">Content Rewards ↗</a><a href="https://whop.com/discover/" target="_blank" rel="noopener noreferrer">Whop ↗</a><a href="https://www.clip.tech/clippers" target="_blank" rel="noopener noreferrer">Clip.tech ↗</a></div>
@@ -206,9 +209,28 @@ const $=id=>document.getElementById(id);
 let lastBusy=null, available=false, jobs=[];
 async function api(path,opts){
  const response=await fetch(path,{cache:"no-store",...opts});
- const data=await response.json();
- if(!response.ok)throw new Error(data.error||"Netwerkfout");
+ let data;
+ try{data=await response.json()}
+ catch(e){
+   if(response.status===404)throw new Error("Deze functie ontbreekt in de draaiende webserver. Herstart je bestaande Codespace via GitHub Codespaces.");
+   throw new Error("Server gaf geen bruikbaar antwoord ("+response.status+").");
+ }
+ if(!response.ok){
+  if(data.error==="Onbekende actie")throw new Error("Oude servercode. Stop en herstart dezelfde Codespace via github.com/codespaces; geen nieuwe aanmaken.");
+  throw new Error(data.error||"Serverfout "+response.status);
+ }
  return data;
+}
+let campaignBackendReady=false;
+async function checkCampaignBackend(){
+ try{
+  const res=await fetch("/api/version",{cache:"no-store"});
+  if(!res.ok)throw new Error("Onbekende serverversie");
+  const info=await res.json();
+  campaignBackendReady=Array.isArray(info.features)&&info.features.includes("campaign_discovery");
+ }catch(e){campaignBackendReady=false}
+ $("servernotice").style.display=campaignBackendReady?"none":"block";
+ return campaignBackendReady;
 }
 function showBadge(text,cls){ $("badge").className="status "+cls; $("badge").textContent="●  "+text; }
 async function refresh(){
@@ -486,6 +508,10 @@ function selectedClip(){
  return {job,pick};
 }
 async function launch(action){
+ if(action==="campaigns"&&!(await checkCampaignBackend())){
+   alert("De nieuwe zoekknop staat al op je gsm, maar je Codespace-server is nog oud. Stop en start de BESTAANDE Codespace opnieuw via github.com/codespaces.");
+   return;
+ }
  const payload={action};
  if(action==="analyze"){
   payload.url=val("videourl");payload.permission=$("permission").checked;
@@ -516,7 +542,7 @@ document.querySelectorAll(".action").forEach(b=>b.addEventListener("click",()=>l
 $("job").addEventListener("change",()=>{updatePicks();$("hooks").replaceChildren();});
 $("pick").addEventListener("change",()=>{$("hooks").replaceChildren();});
 $("refresh").addEventListener("click",async()=>{await refresh();await loadJobs();await loadCampaigns();await loadPosts();});
-Promise.allSettled([refresh(),loadJobs(),loadResult("trends"),loadResult("streams"),loadCampaigns(),loadPosts(),loadLiveClips(),loadDiscovered()]);
+Promise.allSettled([refresh(),loadJobs(),loadResult("trends"),loadResult("streams"),loadCampaigns(),loadPosts(),loadLiveClips(),checkCampaignBackend().then(ok=>ok&&loadDiscovered())]);
 setInterval(refresh,6500);
 </script>
 </body></html>
