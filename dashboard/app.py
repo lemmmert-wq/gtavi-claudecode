@@ -25,6 +25,11 @@ DATA = ROOT / ".dashboard"
 DATA.mkdir(exist_ok=True)
 PY = ROOT / ".venv" / "bin" / "python"
 PORT = int(os.environ.get("CLIP_DASHBOARD_PORT", "8765"))
+try:
+    CODE_REVISION = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
+                                   capture_output=True, text=True, timeout=4).stdout.strip()
+except (OSError, subprocess.TimeoutExpired):
+    CODE_REVISION = "unknown"
 LOCK = threading.Lock()
 STATE = {"busy": False, "task": "", "message": "Klaar om te starten", "updated": "", "failed": False}
 
@@ -240,6 +245,8 @@ class Handler(BaseHTTPRequestHandler):
             if not p.is_file():
                 return self.send_error(404)
             self.stream_video(p)
+        elif path == "/api/version":
+            self.reply({"revision": CODE_REVISION})
         elif path == "/api/campaigns":
             self.reply({"campaigns": list_campaigns(DATA)})
         elif path == "/api/posts":
