@@ -87,7 +87,10 @@ textarea{width:100%;background:#0d1426;border:1px solid #4c5875;color:#fff;borde
 
 <section class="panel" id="campaignpanel">
  <h2>2 · 💰 Betaalde campagnes</h2>
- <p>Volgens de originele GitHub campaign-finder: zoek actuele campagnes, lees alle voorwaarden en bewaar de regels hier. Niets is automatisch gecontroleerd of goedgekeurd.</p>
+ <p>Zoek zelf openbare GTA 6-clipcampagnes zonder websites af te lopen. Bekijk daarna altijd de originele voorwaarden, bronrechten en Belgische deelname.</p>
+ <button class="primary action wide" data-action="campaigns" style="margin:12px 0">🔎 Zoek betaalde GTA 6-campagnes<span class="hint">Publieke campagnes van Content Rewards</span></button>
+ <div id="discoverydate" class="muted">Nog niet gezocht.</div>
+ <div id="discoveryresults" class="padded muted">Hier verschijnen de gevonden campagnes.</div>
  <div class="external"><a href="https://contentrewards.com/" target="_blank" rel="noopener noreferrer">Content Rewards ↗</a><a href="https://whop.com/discover/" target="_blank" rel="noopener noreferrer">Whop ↗</a><a href="https://www.clip.tech/clippers" target="_blank" rel="noopener noreferrer">Clip.tech ↗</a></div>
  <div id="campaignlist" class="padded muted">Nog geen campagnes vastgelegd.</div>
  <details><summary>+ Campagne en voorwaarden bewaren</summary>
@@ -223,7 +226,7 @@ async function refresh(){
   $("output").textContent=s.message||"Geen resultaat";
   document.querySelectorAll(".action").forEach(b=>b.disabled=s.busy||!available);
   if(lastBusy===true && !s.busy){
-    await Promise.all([loadResult("trends"),loadResult("streams"),loadJobs(),loadLiveClips()]);
+    await Promise.all([loadResult("trends"),loadResult("streams"),loadJobs(),loadLiveClips(),loadDiscovered()]);
   }
   lastBusy=s.busy;
  }catch(e){ showBadge("Geen verbinding","bad");$("system").textContent=e.message; }
@@ -305,6 +308,54 @@ function linkTo(url, label){
 }
 function addText(container,tag,value,cls){
  const e=document.createElement(tag);e.textContent=value;if(cls)e.className=cls;container.append(e);return e;
+}
+async function loadDiscovered(){
+ try{
+  const data=await api("/api/discover");
+  const target=$("discoveryresults");target.replaceChildren();
+  $("discoverydate").textContent=data.checked_at?"Laatst opgehaald: "+new Date(data.checked_at).toLocaleString("nl-BE"):"Nog niet automatisch gezocht.";
+  const items=data.items||[];
+  if(!items.length){
+   addText(target,"p",data.notice||"Nog geen resultaten. Druk op de zoekknop.");
+   return;
+  }
+  for(const item of items){
+   const card=document.createElement("div");card.className="listbox";
+   addText(card,"strong",item.name);
+   const active=item.status==="accepteert clips volgens publieke pagina";
+   addText(card,"span",active?"Publieke pagina: accepteert clips":item.status,"tag");
+   const pay=item.rate_per_1k===null?"Tarief niet openbaar bevestigd":item.currency+" "+item.rate_per_1k+" / 1.000 views";
+   const cap=item.max_per_clip===null?"Max. onbekend":"Max. "+item.currency+" "+item.max_per_clip+" / clip";
+   addText(card,"p",pay+" · "+cap);
+   if(item.remaining_budget!==null)addText(card,"p","Vermeld resterend budget: "+item.currency+" "+item.remaining_budget);
+   if(item.platforms?.length)addText(card,"p","Platforms: "+item.platforms.join(", "));
+   card.append(linkTo(item.url,"Bekijk campagne en deelnamevoorwaarden ↗"));
+   const choose=document.createElement("button");choose.className="smallbtn";choose.textContent="Bewaar als concept";
+   choose.addEventListener("click",()=>{
+    $("cname").value=item.name||"";
+    $("curl").value=item.url||"";
+    $("ccreator").value="";
+    $("cplatforms").value=(item.platforms||[]).join(", ");
+    $("csource").value="";
+    $("crate").value=item.rate_per_1k===null?"":item.rate_per_1k;
+    $("ccurrency").value="USD";
+    $("ccap").value=item.max_per_clip===null?"":item.max_per_clip;
+    $("cbudget").value=item.remaining_budget===null?"":item.currency+" "+item.remaining_budget;
+    $("cmin").value="";$("cmax").value="";
+    $("ctags").value="";$("cmention").value="";
+    $("crules").value="";
+    $("creviewed").checked=false;
+    $("campaignpanel").querySelector("details").open=true;
+    $("cname").scrollIntoView({behavior:"smooth",block:"center"});
+   });
+   card.append(document.createTextNode(" "),choose);
+   target.append(card);
+  }
+  addText(target,"p","Automatisch gevonden ≠ deelname goedgekeurd. Lees de campagnevoorwaarden, landbeperkingen en toegestaan bronmateriaal zelf.","help");
+  if(data.failed)addText(target,"p",data.failed+" campagnepagina('s) konden niet worden gecontroleerd.");
+ }catch(e){
+  $("discoveryresults").textContent="Campagnezoeker niet beschikbaar: "+e.message;
+ }
 }
 async function loadCampaigns(){
  const d=await api("/api/campaigns");
@@ -465,7 +516,7 @@ document.querySelectorAll(".action").forEach(b=>b.addEventListener("click",()=>l
 $("job").addEventListener("change",()=>{updatePicks();$("hooks").replaceChildren();});
 $("pick").addEventListener("change",()=>{$("hooks").replaceChildren();});
 $("refresh").addEventListener("click",async()=>{await refresh();await loadJobs();await loadCampaigns();await loadPosts();});
-Promise.allSettled([refresh(),loadJobs(),loadResult("trends"),loadResult("streams"),loadCampaigns(),loadPosts(),loadLiveClips()]);
+Promise.allSettled([refresh(),loadJobs(),loadResult("trends"),loadResult("streams"),loadCampaigns(),loadPosts(),loadLiveClips(),loadDiscovered()]);
 setInterval(refresh,6500);
 </script>
 </body></html>
