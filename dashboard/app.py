@@ -78,10 +78,7 @@ def run_task(action, payload):
             "streams": [str(PY), "scripts/streams.py", "--query", "gta 6", "--limit", "10",
                         "--out", str(DATA / "streams.md")],
         }
-        if action == "demo":
-            cmd = [str(PY), "scripts/demo.py"]
-            timeout = 600
-        elif action == "campaigns":
+        if action == "campaigns":
             result = discover("gta")
             save_discovery(DATA, result)
             message = (f'{len(result["items"])} openbare campagnes gevonden. '
@@ -94,6 +91,9 @@ def run_task(action, payload):
             return
         if action in commands:
             cmd = commands[action]
+            timeout = 600
+        elif action == "demo":
+            cmd = [str(PY), "scripts/demo.py"]
             timeout = 600
         elif action == "analyze":
             url = str(payload["url"]).strip()
