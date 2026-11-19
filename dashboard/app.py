@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from dashboard.workflow import add_campaign, add_post, list_campaigns, list_posts, get_campaign, campaign_rules_file
+from dashboard.campaign_discovery import discover, read_discovery, save_discovery
 
 DATA = ROOT / ".dashboard"
 DATA.mkdir(exist_ok=True)
@@ -77,6 +78,17 @@ def run_task(action, payload):
             "streams": [str(PY), "scripts/streams.py", "--query", "gta 6", "--limit", "10",
                         "--out", str(DATA / "streams.md")],
         }
+        if action == "campaigns":
+            result = discover("gta")
+            save_discovery(DATA, result)
+            message = (f'{len(result["items"])} openbare campagnes gevonden. '
+                       f'Bekijk de volledige voorwaarden op de campagnewebsite. '
+                       f'{result["failed"]} detailpagina(s) niet gecontroleerd.')
+            failure = False
+            with LOCK:
+                STATE.update(busy=False, failed=failure, message=message,
+                             updated=time.strftime("%H:%M:%S"))
+            return
         if action in commands:
             cmd = commands[action]
             timeout = 600
@@ -249,6 +261,8 @@ class Handler(BaseHTTPRequestHandler):
             self.reply({"revision": CODE_REVISION})
         elif path == "/api/campaigns":
             self.reply({"campaigns": list_campaigns(DATA)})
+        elif path == "/api/discover":
+            self.reply(read_discovery(DATA))
         elif path == "/api/posts":
             self.reply({"posts": list_posts(DATA)})
         elif path == "/api/liveclips":
@@ -327,7 +341,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/posts":
                 return self.reply({"post": add_post(DATA, payload)}, 201)
             action = payload.get("action")
-            if action not in ("trends", "streams", "analyze", "clip", "translate", "check", "live"):
+            if action not in ("campaigns", "trends", "streams", "analyze", "clip", "translate", "check", "live"):
                 return self.reply({"error": "Onbekende actie"}, 400)
             if action == "analyze" and (not payload.get("permission") or not valid_url(str(payload.get("url", "")))):
                 return self.reply({"error": "Gebruik een geldige YouTube/Twitch-URL en bevestig toestemming"}, 400)
