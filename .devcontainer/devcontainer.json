@@ -1,8 +1,20 @@
 {
-  "name": "GTA VI Clipper - iPhone Codespaces",
+  "name": "GTA VI Clipper - mobiel dashboard",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
-  "features": {},
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg && python3 -m venv .venv && .venv/bin/python -m pip install --upgrade pip && .venv/bin/python -m pip install -r requirements.txt",
+  "forwardPorts": [
+    8765
+  ],
+  "portsAttributes": {
+    "8765": {
+      "label": "GTA Clipper mobiel dashboard",
+      "onAutoForward": "notify",
+      "visibility": "private",
+      "protocol": "http"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start.sh",
+  "postAttachCommand": "bash .devcontainer/start.sh",
   "customizations": {
     "vscode": {
       "settings": {
