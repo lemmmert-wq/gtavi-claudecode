@@ -18,9 +18,13 @@ De mobiele webapp gebruikt zoveel mogelijk van de oorspronkelijke GTA VI Claude 
 
 Bij expliciete toestemming kun je de originele live.py-module 3, 5, 10 of 15 minuten gebruiken om chatpieken te vinden. Deze module maakt **ruwe fragmenten**, geen volledige Shorts met campagnerechten. Hij is niet geschikt om onbeperkt 24/7 in een Codespace te draaien.
 
-## Campagnezoeker — wat nog niet automatisch gaat
+## Campagnezoeker — wat er nu automatisch gaat
 
-Het originele GitHub-project bevat een **Claude Code skill** genaamd campaign-finder. Dat is een instructie aan een browsende AI om actuele webpagina's te lezen, niet een zelfstandige publieke betaal-API. In deze iPhone-versie staan links naar de bronplatformen en kun je de actuele voorwaarden opslaan. Er is **nog geen automatische live campagne-scraper** en geen koppeling met jouw Whop-account.
+De knop **Zoek betaalde GTA 6-campagnes** controleert bij een druk op de knop de openbare catalogus en campagnepagina's van Content Rewards. Het dashboard toont de originele campagne-URL, gevonden naam, publiek zichtbare betaalbedragen en publieke status, of **onbekend** wanneer gegevens niet duidelijk op de website staan. Resultaten krijgen een controletijdstip en blijven tot de volgende zoekopdracht als cache beschikbaar. Het is dus geen continue achtergrondmonitor.
+
+Klik op **Bewaar als concept** om een gevonden campagneformulier vooraf in te vullen. De gebruiker controleert op de originele campagnepagina de volledige regels (maker, toegestaan bronmateriaal, verplichte overlays, hashtags, deelname uit België, uitbetalingsvoorwaarden) en vult die in. Aanmelding en publicatie zijn altijd handmatig.
+
+De oorspronkelijke campaign-finder is een Claude Code-instructie aan een browsende AI, geen formele publieke betaal-API. Onze nieuwe ontdekker leest alleen vrij toegankelijke pagina's van Content Rewards. **Als die site zijn pagina's verandert, serververzoeken blokkeert of login vereist, kan de automatische zoekfunctie geen resultaten tonen.** Het dashboard geeft dan een foutmelding en de rechtstreekse links naar Content Rewards, Whop en Clip.tech blijven beschikbaar. Voor Whop en Clip.tech zijn de afgeschermde campagnevoorwaarden niet automatisch leesbaar.
 
 Andere originele Claude Code skills zoals cheat-codes, secrets-map, questions-to-posts en playbook zijn nog niet allemaal als aparte knoppen in de webapp ingebouwd. De originele bestanden blijven gewoon aanwezig in de fork.
 
