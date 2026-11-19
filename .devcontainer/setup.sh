@@ -12,8 +12,21 @@ trap 'code=$?; echo "Installatiefout (code $code) op regel $LINENO"; echo "faile
 echo "Python: $(python3 --version)"
 if ! command -v ffmpeg >/dev/null 2>&1; then
   echo "FFmpeg installeren..."
-  sudo apt-get update
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg
+  # A Codespaces image can contain a third-party Yarn APT feed whose
+  # signing key is expired. Do NOT bypass APT signature verification:
+  # disable only that optional feed and retry with signed Debian sources.
+  if ! sudo apt-get update; then
+    echo "APT-update mislukt. Eventuele defecte Yarn-pakketbron uitschakelen."
+    for source in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+      [ -f "$source" ] || continue
+      if grep -Fq "dl.yarnpkg.com" "$source"; then
+        echo "Defecte externe Yarn-bron uitschakelen: $source"
+        sudo mv "$source" "$source.disabled"
+      fi
+    done
+    sudo apt-get update
+  fi
+  sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg
 else
   echo "FFmpeg is al aanwezig."
 fi
