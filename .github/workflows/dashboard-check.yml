@@ -3,11 +3,13 @@ on:
   push:
     paths:
       - 'dashboard/**'
+      - 'scripts/trends.py'
       - '.devcontainer/**'
       - '.github/workflows/dashboard-check.yml'
   pull_request:
     paths:
       - 'dashboard/**'
+      - 'scripts/trends.py'
       - '.devcontainer/**'
       - '.github/workflows/dashboard-check.yml'
 jobs:
@@ -19,8 +21,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate syntax and unit tests
         run: |
-          python3 -m py_compile dashboard/app.py dashboard/test_dashboard.py
-          python3 -m unittest dashboard.test_dashboard
+          python3 -m py_compile dashboard/app.py dashboard/test_dashboard.py dashboard/test_trends.py scripts/trends.py
+          python3 -m unittest dashboard.test_dashboard dashboard.test_trends
           bash -n .devcontainer/setup.sh .devcontainer/start.sh
           python3 -m json.tool .devcontainer/devcontainer.json >/dev/null
       - name: Start dashboard and test routes
