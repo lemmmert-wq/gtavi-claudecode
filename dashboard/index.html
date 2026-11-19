@@ -137,6 +137,16 @@ textarea{width:100%;background:#0d1426;border:1px solid #4c5875;color:#fff;borde
  <button class="action wide" data-action="live">● Start livefragmentanalyse</button>
  <div class="padded"><strong style="font-size:13px">Gevonden ruwe liveclips</strong><div id="liveclips" class="clips"><small>Nog geen livefragmenten opgeslagen.</small></div></div>
 </section>
+<section class="panel" id="tomopanel">
+ <h2>🎬 Echte GTA VI-clip: Tomo</h2>
+ <p><strong>Campagne:</strong> TOMO GTA VI Clipping. Eerste conceptidee: Tomo opent zijn GTA 6-doos en ontdekt dat er geen disc in zit. De gekozen tijdcode is voorlopig en moet na het knippen bekeken worden.</p>
+ <div class="external"><a href="https://contentrewards.com/c/campaigns/df6de26f-86ec-4782-b818-1fc8053b99a4" target="_blank" rel="noopener noreferrer">Campagneregels en aanmelden ↗</a>
+ <a href="https://www.youtube.com/watch?v=w7OmfMXergI&t=288s" target="_blank" rel="noopener noreferrer">Bekijk originele scène ↗</a></div>
+ <p>Dit maakt een <b>privéconcept</b> met echte beelden, Engelse automatische ondertitels waar mogelijk en 9:16-layout. Geen automatische publicatie. De campagne heeft mogelijk weinig budget over; controleer de actuele regels na aanmelden.</p>
+ <div class="checkline"><input type="checkbox" id="tomoreview"><label for="tomoreview">Ik begrijp dat dit alleen een privéconcept is, dat ik de bron moet beoordelen en dat ik vóór publiceren moet deelnemen en de volledige campagneregels controleren.</label></div>
+ <button class="primary action wide" data-action="tomo_draft">✂️ Maak Tomo GTA VI-concept</button>
+ <div id="tomolink" class="clips"></div>
+</section>
 <section class="panel" id="demopanel">
   <h2>🧪 Eén-klik technische proefclip</h2>
   <p>De app maakt zelf een korte testvideo. Daarna gebruikt hij de echte clipknipper om een verticale clip met ondertitels te maken en technisch te controleren. Geen YouTube-video, streamerrechten of account nodig.</p>
@@ -508,8 +518,16 @@ function showDemoClip(){
  const download=linkTo("/download/demo-local/clip_1.mp4","⬇️ Bewaar proefclip");
  holder.append(a,download);
 }
+function showTomoClip(){
+ const holder=$("tomolink");holder.replaceChildren();
+ const found=jobs.find(x=>x.id==="tomo-unboxing"&&(x.clips||[]).includes(1));
+ if(!found)return;
+ holder.append(linkTo("/video/tomo-unboxing/clip_1.mp4","▶️ Bekijk Tomo-concept"));
+ holder.append(linkTo("/download/tomo-unboxing/clip_1.mp4","⬇️ Bewaar concept-MP4"));
+}
 function updatePicks(){
  showDemoClip();
+ showTomoClip();
  const item=jobs.find(j=>j.id===$("job").value);
  const old=$("pick").value;
  $("pick").replaceChildren();
@@ -534,6 +552,14 @@ function selectedClip(){
  if(!job||!pick){alert("Kies eerst een geanalyseerde video en een moment.");return null;}
  return {job,pick};
 }
+async function checkFeature(name){
+ try{
+  const res=await fetch("/api/version",{cache:"no-store"});
+  if(!res.ok)return false;
+  const data=await res.json();
+  return Array.isArray(data.features)&&data.features.includes(name);
+ }catch(e){return false}
+}
 async function checkDemoBackend(){
  try{
   const response=await fetch("/api/version",{cache:"no-store"});
@@ -544,12 +570,17 @@ async function checkDemoBackend(){
 }
 async function launch(action){
  const outdated=action==="campaigns"&&!(await checkCampaignBackend()) ||
-                action==="demo"&&!(await checkDemoBackend());
+                action==="demo"&&!(await checkDemoBackend()) ||
+                action==="tomo_draft"&&!(await checkFeature("tomo_draft"));
  if(outdated){
    alert("De webserver gebruikt nog oude code. Stop en herstart dezelfde Codespace via github.com/codespaces om deze functie te activeren.");
    return;
  }
  const payload={action};
+ if(action==="tomo_draft"){
+   if(!$("tomoreview").checked)return alert("Bevestig eerst dat het uitsluitend om een privéconcept gaat en dat publicatie pas na controle van de campagneregels kan.");
+   payload.review_only=true;
+ }
  if(action==="analyze"){
   payload.url=val("videourl");payload.permission=$("permission").checked;
   if(!payload.permission)return alert("Bevestig eerst dat je de rechten of toestemming hebt.");
