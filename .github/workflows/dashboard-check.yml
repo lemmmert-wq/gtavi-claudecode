@@ -1,0 +1,36 @@
+name: GTA mobile dashboard checks
+on:
+  push:
+    paths:
+      - 'dashboard/**'
+      - '.devcontainer/**'
+      - '.github/workflows/dashboard-check.yml'
+  pull_request:
+    paths:
+      - 'dashboard/**'
+      - '.devcontainer/**'
+      - '.github/workflows/dashboard-check.yml'
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate syntax and unit tests
+        run: |
+          python3 -m py_compile dashboard/app.py dashboard/test_dashboard.py
+          python3 -m unittest dashboard.test_dashboard
+          bash -n .devcontainer/setup.sh .devcontainer/start.sh
+          python3 -m json.tool .devcontainer/devcontainer.json >/dev/null
+      - name: Start dashboard and test routes
+        run: |
+          python3 dashboard/app.py > /tmp/gta-dashboard.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in 1 2 3 4 5; do
+            if curl -fsS http://127.0.0.1:8765/api/status -o /tmp/dashboard-status.json; then break; fi
+            sleep 1
+          done
+          python3 -c 'import json; d=json.load(open("/tmp/dashboard-status.json")); assert "install" in d'
+          curl -fsS http://127.0.0.1:8765/ | grep -q 'GTA Clipper'
