@@ -43,3 +43,32 @@ jobs:
           done
           python3 -c 'import json; d=json.load(open("/tmp/dashboard-status.json")); assert "install" in d'
           curl -fsS http://127.0.0.1:8765/ | grep -q 'GTA Clipper'
+          python3 - <<'PY'
+          import json, urllib.request
+          root = "http://127.0.0.1:8765"
+          def get(path):
+              with urllib.request.urlopen(root + path, timeout=10) as result:
+                  return json.load(result)
+          def post(path, value):
+              body = json.dumps(value).encode()
+              req = urllib.request.Request(root + path, data=body,
+                  headers={"Content-Type": "application/json", "Origin": root}, method="POST")
+              with urllib.request.urlopen(req, timeout=10) as result:
+                  return json.load(result)
+          assert get("/api/campaigns") == {"campaigns": []}
+          campaign = post("/api/campaigns", {
+              "name": "Testcampagne", "source_url": "https://example.org/campaign",
+              "rules_reviewed": True, "min_seconds": 10, "max_seconds": 40
+          })["campaign"]
+          assert campaign["name"] == "Testcampagne"
+          assert len(get("/api/campaigns")["campaigns"]) == 1
+          post("/api/posts", {"url": "https://www.youtube.com/watch?v=abcdefghijk",
+              "platform": "YouTube", "state": "posted", "views": 123, "checkpoint": "12h"})
+          post("/api/posts", {"url": "https://www.youtube.com/watch?v=abcdefghijk",
+              "platform": "YouTube", "state": "approved", "views": 456,
+              "confirmed_payout": 3, "checkpoint": "24h"})
+          posts = get("/api/posts")["posts"]
+          assert len(posts) == 1 and posts[0]["views"] == 456
+          assert posts[0]["confirmed_payout"] == 3
+          assert get("/api/liveclips")["clips"] == []
+          PY
