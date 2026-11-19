@@ -160,17 +160,34 @@ def add_post(folder, data):
     currency = clean(data.get("currency") or "USD", 3).upper()
     if currency not in {"USD", "EUR", "GBP"}:
         raise ValueError("Onbekende munt")
-    obj = {
-        "id": uuid.uuid4().hex[:12],
-        "url": url, "platform": clean(data.get("platform"), 30),
-        "campaign_id": campaign_id,
-        "views": int(views) if views is not None else None,
-        "state": state, "confirmed_payout": payout, "currency": currency,
-        "notes": clean(data.get("notes"), 400),
-        "recorded_at": datetime.now(timezone.utc).isoformat(),
-    }
+    checkpoint = clean(data.get("checkpoint") or "other", 8)
+    if checkpoint not in ("12h", "24h", "72h", "other"):
+        raise ValueError("Onbekend meetmoment")
+    now = datetime.now(timezone.utc).isoformat()
     with STORE_LOCK:
         entries = read_records(folder, "posts.json")
-        entries.insert(0, obj)
+        old = next((p for p in entries if p.get("url") == url), None)
+        if old:
+            stages = ["posted", "submitted", "approved", "paid"]
+            if stages.index(state) < stages.index(old["state"]):
+                raise ValueError("Een gepubliceerde clip kan niet terug naar een eerdere status")
+            if payout is None and old["state"] in ("approved", "paid") and state in ("approved", "paid"):
+                payout = old.get("confirmed_payout")
+        obj = {
+            "id": old["id"] if old else uuid.uuid4().hex[:12],
+            "url": url, "platform": clean(data.get("platform"), 30),
+            "campaign_id": campaign_id or (old.get("campaign_id", "") if old else ""),
+            "views": int(views) if views is not None else (old.get("views") if old else None),
+            "state": state, "confirmed_payout": payout, "currency": currency,
+            "notes": clean(data.get("notes"), 400),
+            "recorded_at": old["recorded_at"] if old else now,
+            "updated_at": now,
+            "history": (old.get("history", []) if old else [])[-19:] + [{
+                "at": now, "checkpoint": checkpoint, "state": state,
+                "views": int(views) if views is not None else None,
+                "confirmed_payout": payout,
+            }],
+        }
+        entries = [obj] + [p for p in entries if p.get("url") != url]
         write_records(folder, "posts.json", entries[:500])
     return obj
