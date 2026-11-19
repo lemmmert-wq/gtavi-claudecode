@@ -33,13 +33,18 @@ def status():
         logtail = (DATA / "install.log").read_text(errors="replace")[-2200:]
     except FileNotFoundError:
         logtail = ""
-    packages = {}
-    for label, name in (("yt-dlp", "yt_dlp"), ("Whisper", "faster_whisper"), ("NumPy", "numpy")):
-        if PY.exists():
-            r = subprocess.run([str(PY), "-c", "import " + name], capture_output=True, timeout=12)
-            packages[label] = r.returncode == 0
-        else:
-            packages[label] = False
+    packages = {"yt-dlp": False, "Whisper": False, "NumPy": False}
+    if PY.is_file():
+        try:
+            check = ("import importlib.util,json; print(json.dumps({"
+                     "'yt-dlp':importlib.util.find_spec('yt_dlp') is not None,"
+                     "'Whisper':importlib.util.find_spec('faster_whisper') is not None,"
+                     "'NumPy':importlib.util.find_spec('numpy') is not None}))")
+            probe = subprocess.run([str(PY), "-c", check], text=True, capture_output=True, timeout=6)
+            if probe.returncode == 0:
+                packages = json.loads(probe.stdout)
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            pass
     with LOCK:
         active = dict(STATE)
     return {"install": install, "ffmpeg": bool(shutil.which("ffmpeg")),
