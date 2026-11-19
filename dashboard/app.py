@@ -255,7 +255,7 @@ class Handler(BaseHTTPRequestHandler):
                                     "size_bytes": f.stat().st_size})
             self.reply({"clips": results})
         elif path.startswith("/live/"):
-            m = re.fullmatch(r"/live/([a-z0-9-]{3,70})/spike_([0-9]{1,3})\\.mp4", path)
+            m = re.fullmatch(r"/live/([a-z0-9-]{3,70})/spike_([0-9]{1,3})\.mp4", path)
             if not m:
                 return self.send_error(404)
             p = ROOT / "jobs" / m[1] / "live" / ("spike_" + str(int(m[2])) + ".mp4")
