@@ -78,7 +78,10 @@ def run_task(action, payload):
             "streams": [str(PY), "scripts/streams.py", "--query", "gta 6", "--limit", "10",
                         "--out", str(DATA / "streams.md")],
         }
-        if action == "campaigns":
+        if action == "demo":
+            cmd = [str(PY), "scripts/demo.py"]
+            timeout = 600
+        elif action == "campaigns":
             result = discover("gta")
             save_discovery(DATA, result)
             message = (f'{len(result["items"])} openbare campagnes gevonden. '
@@ -343,7 +346,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/posts":
                 return self.reply({"post": add_post(DATA, payload)}, 201)
             action = payload.get("action")
-            if action not in ("campaigns", "trends", "streams", "analyze", "clip", "translate", "check", "live"):
+            if action not in ("demo", "campaigns", "trends", "streams", "analyze", "clip", "translate", "check", "live"):
                 return self.reply({"error": "Onbekende actie"}, 400)
             if action == "analyze" and (not payload.get("permission") or not valid_url(str(payload.get("url", "")))):
                 return self.reply({"error": "Gebruik een geldige YouTube/Twitch-URL en bevestig toestemming"}, 400)
