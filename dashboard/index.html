@@ -44,6 +44,11 @@ details{margin-top:9px}
 .clips a{border-radius:10px;background:#303d62;color:#fff;padding:10px 13px;text-decoration:none;font-size:13px;font-weight:700}
 footer{text-align:center;color:#9da8c1;font-size:12px;margin-top:26px;line-height:1.6}
 a{color:#ffbd89}
+.videos{display:grid;gap:10px;margin-top:10px}
+.resulthead{margin:14px 0 0;font-size:14px;color:#eef2ff}
+.videocard{background:#0e162a;border:1px solid #2d3c56;border-radius:12px;padding:13px;overflow-wrap:anywhere}
+.videocard a{display:block;font-size:14px;font-weight:700;color:#ffc08f;text-decoration:none}
+.videometa{font-size:11px;line-height:1.5;color:#abb7d0;margin-top:6px}
 </style>
 </head>
 <body>
@@ -62,7 +67,7 @@ a{color:#ffbd89}
     <button class="primary action" data-action="trends">🔥 Trends zoeken<span class="hint">Laatste 24 uur</span></button>
     <button class="action" data-action="streams">📺 Livestreams<span class="hint">YouTube / Twitch</span></button>
   </div>
-  <details id="trendsdetails"><summary>Gevonden trending video's</summary><pre id="trendsout">Nog geen zoekopdracht uitgevoerd</pre></details>
+  <details id="trendsdetails"><summary>Gevonden GTA 6-video's</summary><div id="trendsout" class="videos">Nog geen zoekopdracht uitgevoerd</div></details>
   <details id="streamsdetails"><summary>Gevonden streams</summary><pre id="streamsout">Nog geen zoekopdracht uitgevoerd</pre></details>
 </section>
 <section class="panel">
@@ -120,9 +125,39 @@ async function refresh(){
   lastBusy=s.busy;
  }catch(e){ showBadge("Geen verbinding","bad");$("system").textContent=e.message; }
 }
+function renderTrends(data){
+ const target=$("trendsout");target.replaceChildren();
+ const items=data.items||[];
+ const confirmed=items.filter(x=>x.freshness==="exact");
+ const suggested=items.filter(x=>x.freshness!=="exact");
+ function note(s){const p=document.createElement("p");p.textContent=s;target.append(p)}
+ function section(title,group){
+  if(!group.length)return;
+  const head=document.createElement("h3");head.className="resulthead";head.textContent=title;target.append(head);
+  for(const x of group){
+   const card=document.createElement("div");card.className="videocard";
+   const link=document.createElement("a");link.href=x.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent=x.title||"Video bekijken";
+   const meta=document.createElement("div");meta.className="videometa";
+   const viewText=Number(x.views||0).toLocaleString("nl-BE")+" views";
+   const freshness=x.freshness==="exact"?(x.age_hours+" uur oud · "+Math.round(x.views_per_hour||0).toLocaleString("nl-BE")+" views/uur")
+     :x.freshness==="day"?"Datum bekend; uur onbekend":"Publicatiedatum onbekend";
+   meta.textContent=[x.channel||"YouTube",viewText,freshness].join(" · ");
+   card.append(link,meta);target.append(card);
+  }
+ }
+ if(!confirmed.length)note("Geen video's met een bevestigd tijdstip binnen de laatste 24 uur.");
+ section("Bevestigd recent",confirmed);
+ if(suggested.length)note("Deze andere video's zijn zoekresultaten, niet bewezen trends. Controleer de datum op YouTube.");
+ section("Andere gevonden video's",suggested);
+ if(!items.length){note("Er zijn geen bruikbare zoekresultaten. Probeer later opnieuw of bekijk YouTube rechtstreeks.");}
+ if(data.meta?.details_failed)note("Bij "+data.meta.details_failed+" video(s) ontbreken volledige YouTube-gegevens.");
+ const link=document.createElement("a");link.href="https://www.youtube.com/results?search_query=gta+6";link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open GTA 6-zoekresultaten op YouTube";target.append(link);
+}
 async function loadResult(kind){
- try{const d=await api("/api/results?kind="+kind);$(kind+"out").textContent=d.text||"Nog geen resultaten";}
- catch(e){$(kind+"out").textContent=e.message}
+ try{const d=await api("/api/results?kind="+kind);
+  if(kind==="trends"&&Array.isArray(d.items))renderTrends(d);
+  else $(kind+"out").textContent=d.text||"Nog geen resultaten";
+ }catch(e){$(kind+"out").textContent=e.message}
 }
 async function loadJobs(){
  try{
