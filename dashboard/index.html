@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<title>GTA Clipper — mobiel dashboard</title>
+<style>
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f5f5ff;background:#0b1020;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;padding:0 14px 60px;line-height:1.45}
+main{max-width:780px;margin:auto}
+header{padding:31px 6px 22px;display:flex;align-items:center;gap:13px}
+.logo{width:45px;height:45px;border-radius:14px;background:linear-gradient(135deg,#f9b85d,#ff675e 55%,#985bff);display:grid;place-items:center;color:#111426;font-size:26px;font-weight:900}
+h1{font-size:22px;line-height:1.1;margin:0;letter-spacing:-.6px}
+.subtitle{font-size:12px;color:#9fa9c6;margin-top:5px}
+.panel{background:#171d30;border:1px solid #2f3b55;border-radius:18px;padding:17px;margin-bottom:15px;box-shadow:0 4px 20px #0002}
+h2{font-size:16px;margin:0 0 10px}
+p{margin:8px 0;color:#adb9d0;font-size:13px}
+small{font-size:12px;color:#adb9d0}
+.statusline{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.status{display:inline-flex;align-items:center;border-radius:50px;padding:5px 10px;font-size:12px;font-weight:750;background:#344053;color:#e0e6f6}
+.status.ok{background:#153d36;color:#90e8c3}
+.status.bad{background:#522c35;color:#ffacb2}
+.status.busy{background:#3e355e;color:#c6b7ff}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:7px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+button{appearance:none;border:0;border-radius:13px;padding:14px 11px;background:#2a3552;color:#fafbff;font-weight:700;font-size:14px;min-height:50px;cursor:pointer;text-align:left}
+button.primary{background:linear-gradient(130deg,#ffab51,#ee7652);color:#1b1720}
+button:disabled{opacity:.45;cursor:not-allowed}
+button .hint{display:block;font-weight:400;color:inherit;opacity:.8;font-size:11px;margin-top:3px}
+input,select{width:100%;background:#0d1426;border:1px solid #4c5875;color:#fff;border-radius:11px;min-height:44px;padding:11px;font-size:15px}
+label{font-size:12px;color:#b6c1d7;display:block;margin:10px 0 6px;font-weight:600}
+.checkline{display:flex;align-items:flex-start;gap:10px;margin:11px 0 14px;font-size:12px;color:#c0cce4}
+.checkline input{width:20px;min-height:0;height:20px;flex:none;margin:0}
+.checkline label{margin:0;font-weight:400}
+button.wide{width:100%;text-align:center}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow:auto;background:#090f1f;border-radius:10px;border:1px solid #2c3953;padding:13px;color:#d4deec;font-size:12px}
+summary{cursor:pointer;font-size:13px;color:#e3e8f6;padding:8px 0}
+details{margin-top:9px}
+.result{font-size:12px;color:#c5d0e2}
+.badge{border:1px solid #46526c;color:#c5d0e2;padding:2px 8px;border-radius:999px;font-size:11px}
+.clips{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}
+.clips a{border-radius:10px;background:#303d62;color:#fff;padding:10px 13px;text-decoration:none;font-size:13px;font-weight:700}
+footer{text-align:center;color:#9da8c1;font-size:12px;margin-top:26px;line-height:1.6}
+a{color:#ffbd89}
+</style>
+</head>
+<body>
+<main>
+<header><div class="logo">VI</div><div><h1>GTA Clipper</h1><div class="subtitle">Jouw mobiele Codespaces-dashboard · beta</div></div></header>
+<section class="panel">
+  <div class="statusline"><h2 style="margin:0">Systeemstatus</h2><span class="status" id="badge"><span class="dot"></span> Controleren</span></div>
+  <p id="system">Installatie controleren …</p>
+  <small id="deps"></small>
+  <details><summary>Installatielog bekijken</summary><pre id="installlog">Nog niet geladen</pre></details>
+</section>
+<section class="panel">
+  <h2>1 · Ontdek GTA 6-content</h2>
+  <p>Zoek video's en livestreams zonder video's te downloaden.</p>
+  <div class="grid">
+    <button class="primary action" data-action="trends">🔥 Trends zoeken<span class="hint">Laatste 24 uur</span></button>
+    <button class="action" data-action="streams">📺 Livestreams<span class="hint">YouTube / Twitch</span></button>
+  </div>
+  <details id="trendsdetails"><summary>Gevonden trending video's</summary><pre id="trendsout">Nog geen zoekopdracht uitgevoerd</pre></details>
+  <details id="streamsdetails"><summary>Gevonden streams</summary><pre id="streamsout">Nog geen zoekopdracht uitgevoerd</pre></details>
+</section>
+<section class="panel">
+  <h2>2 · Interessante momenten zoeken</h2>
+  <p>Gebruik enkel je eigen video's of streams waarvoor je expliciete toestemming hebt. De video wordt gedownload voor analyse en dit kan veel verwerkingstijd en opslag kosten.</p>
+  <label for="videourl">Link naar toegestane YouTube-video of Twitch-VOD</label>
+  <input id="videourl" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off">
+  <div class="checkline"><input type="checkbox" id="permission"><label for="permission">Ik heb toestemming of de benodigde rechten om dit beeldmateriaal te gebruiken.</label></div>
+  <button class="primary wide action" data-action="analyze">✨ Zoek 5 clipmomenten</button>
+</section>
+<section class="panel">
+  <h2>3 · Clip maken en bekijken</h2>
+  <p>Na analyse kies je een moment. De clip krijgt verticaal formaat en ondertitels. Publiceren gebeurt nooit automatisch.</p>
+  <label for="job">Geanalyseerde video</label><select id="job"><option value="">Nog geen analyse</option></select>
+  <label for="pick">Moment</label><select id="pick"><option value="">Selecteer eerst een video</option></select>
+  <label for="hook">Titel bovenaan de clip (optioneel)</label><input id="hook" value="Dit zag niemand aankomen">
+  <button class="primary wide action" style="margin-top:14px" data-action="clip">✂️ Maak verticale clip</button>
+  <div id="clips" class="clips"></div>
+</section>
+<section class="panel">
+  <div class="statusline"><h2 style="margin:0">Activiteitenlog</h2><button id="refresh" style="min-height:36px;padding:8px 12px;font-size:12px">Vernieuw</button></div>
+  <p id="activity">Geen opdracht gestart.</p>
+  <pre id="output">Hier verschijnt de uitvoer van je laatste opdracht.</pre>
+</section>
+<footer>Privédashboard via je GitHub Codespace. Geen automatische uploads of beloofde inkomsten.<br>Laat doorgestuurde poort 8765 op <b>Private</b> staan.</footer>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+let lastBusy=null, available=false, jobs=[];
+async function api(path,opts){
+ const response=await fetch(path,{cache:"no-store",...opts});
+ const data=await response.json();
+ if(!response.ok)throw new Error(data.error||"Netwerkfout");
+ return data;
+}
+function showBadge(text,cls){ $("badge").className="status "+cls; $("badge").textContent="●  "+text; }
+async function refresh(){
+ try{
+  const s=await api("/api/status");
+  available=s.install==="ready" && s.python && s.ffmpeg;
+  if(s.busy)showBadge("Bezig: "+s.task,"busy");
+  else if(s.install==="ready")showBadge("Installatie klaar","ok");
+  else if(s.install==="failed")showBadge("Installatiefout","bad");
+  else showBadge("Installatie "+s.install,"");
+  $("system").textContent=s.busy?"Er wordt iets verwerkt. Je mag dit scherm openlaten.":s.install==="ready"?"Python-omgeving is ingericht.":s.install==="failed"?"Installatie is mislukt; bekijk het log hieronder.":"Codespace instellen; ververs deze pagina na het opstarten.";
+  $("deps").textContent="Python: "+(s.python?"ja":"nee")+" · FFmpeg: "+(s.ffmpeg?"ja":"nee")+" · yt-dlp: "+(s.packages["yt-dlp"]?"ja":"nee")+" · Whisper: "+(s.packages.Whisper?"ja":"nee");
+  $("installlog").textContent=s.install_log||"Geen installatielog beschikbaar";
+  $("activity").textContent=(s.busy?"Bezig: ":"Laatste actie: ")+(s.task||"geen")+(s.updated?" · "+s.updated:"");
+  $("output").textContent=s.message||"Geen resultaat";
+  document.querySelectorAll(".action").forEach(b=>b.disabled=s.busy||!available);
+  if(lastBusy===true && !s.busy){
+    await Promise.all([loadResult("trends"),loadResult("streams"),loadJobs()]);
+  }
+  lastBusy=s.busy;
+ }catch(e){ showBadge("Geen verbinding","bad");$("system").textContent=e.message; }
+}
+async function loadResult(kind){
+ try{const d=await api("/api/results?kind="+kind);$(kind+"out").textContent=d.text||"Nog geen resultaten";}
+ catch(e){$(kind+"out").textContent=e.message}
+}
+async function loadJobs(){
+ try{
+  const data=await api("/api/jobs");
+  const prev=$("job").value;
+  jobs=data.jobs||[];
+  $("job").replaceChildren();
+  $("job").add(new Option("Kies een video",""));
+  for(const item of jobs)$("job").add(new Option((item.title||item.id).slice(0,80),item.id));
+  if(jobs.some(j=>j.id===prev))$("job").value=prev;
+  else if(jobs.length)$("job").value=jobs[0].id;
+  updatePicks();
+ }catch(e){$("activity").textContent=e.message}
+}
+function updatePicks(){
+ const item=jobs.find(j=>j.id===$("job").value);
+ const old=$("pick").value;
+ $("pick").replaceChildren();
+ if(item)for(const c of item.candidates){
+  $("pick").add(new Option("Moment "+c.n+" · "+Math.round(c.start)+"–"+Math.round(c.end)+"s · "+(c.why||[]).join(", "),String(c.n)));
+ }
+ if(item&&item.candidates.some(c=>String(c.n)===old))$("pick").value=old;
+ $("clips").replaceChildren();
+ if(item)for(const n of item.clips||[]){
+  const a=document.createElement("a");
+  a.href="/video/"+encodeURIComponent(item.id)+"/clip_"+n+".mp4";
+  a.target="_blank";a.rel="noopener";
+  a.textContent="▶️ Bekijk clip "+n;
+  $("clips").append(a);
+ }
+}
+async function launch(action){
+ const payload={action};
+ if(action==="analyze"){payload.url=$("videourl").value.trim();payload.permission=$("permission").checked;
+  if(!payload.permission)return alert("Bevestig eerst dat je toestemming hebt.");
+  if(!payload.url)return alert("Vul eerst de videolink in.");
+ }
+ if(action==="clip"){payload.job=$("job").value;payload.pick=Number($("pick").value);payload.hook=$("hook").value;
+  if(!payload.job||!payload.pick)return alert("Kies eerst een video en moment.");
+ }
+ try{await api("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  if(action==="trends")$("trendsdetails").open=true;
+  if(action==="streams")$("streamsdetails").open=true;
+  await refresh();
+ }catch(e){alert(e.message)}
+}
+document.querySelectorAll(".action").forEach(b=>b.addEventListener("click",()=>launch(b.dataset.action)));
+$("job").addEventListener("change",updatePicks);
+$("refresh").addEventListener("click",async()=>{await refresh();await loadJobs();});
+Promise.all([refresh(),loadJobs(),loadResult("trends"),loadResult("streams")]);
+setInterval(refresh,6500);
+</script>
+</body></html>
